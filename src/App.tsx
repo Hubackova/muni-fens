@@ -1,18 +1,8 @@
-
-import './App.css'
+import "./App.css";
+import Countries from "./Countries";
 
 function App() {
-
-  return (
-      <section id="center">
-        <div className="hero">
-        </div>
-        <div>
-          <h1>Fens test :)</h1>
-        </div>
-      </section>
-
-  )
+  return <Countries />;
 }
 
-export default App
+export default App;
