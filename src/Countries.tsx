@@ -57,6 +57,19 @@ const emptyForm = {
   name_cs: "",
 };
 
+const PAGE_SIZE = 50;
+const SEARCH_DEBOUNCE_MS = 300;
+
+type SortOrder = "asc" | "desc";
+
+// Columns the API can sort by (sort_by values match these keys).
+const SORTABLE_COLUMNS = [
+  { key: "alpha2", label: "Alpha2" },
+  { key: "alpha3", label: "Alpha3" },
+  { key: "name_en", label: "Name EN" },
+  { key: "name_cs", label: "Name CS" },
+] as const;
+
 function Countries() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [total, setTotal] = useState(0);
@@ -73,10 +86,32 @@ function Countries() {
   const [isCreating, setIsCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const pageSize = 50;
-  const offset = (page - 1) * pageSize;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  // Search (searchInput is the live field, search is the debounced value sent to the API)
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  // Sorting
+  const [sortBy, setSortBy] = useState<string>("id");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+
+  const offset = (page - 1) * PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isInitialLoading = isLoading && countries.length === 0;
+
+  // Build the list endpoint URL with paging, sorting and search.
+  const buildListUrl = (targetOffset: number) => {
+    const params = new URLSearchParams({
+      limit: String(PAGE_SIZE),
+      offset: String(targetOffset),
+      sort_by: sortBy,
+      sort_order: sortOrder,
+    });
+    const trimmed = search.trim();
+    if (trimmed) {
+      params.set("search", trimmed);
+    }
+    return `${API_BASE}?${params.toString()}`;
+  };
 
   useEffect(() => {
     const controller = new AbortController();
@@ -86,12 +121,9 @@ function Countries() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `${API_BASE}?limit=${pageSize}&offset=${offset}`,
-          {
-            signal: controller.signal,
-          },
-        );
+        const response = await fetch(buildListUrl(offset), {
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error(await readApiError(response));
@@ -117,13 +149,21 @@ function Countries() {
     return () => {
       controller.abort();
     };
-  }, [offset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset, sortBy, sortOrder, search]);
+
+  // Debounce the search field, then reset to the first page.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const reloadCurrentPage = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE}?limit=${pageSize}&offset=${offset}`,
-      );
+      const response = await fetch(buildListUrl(offset));
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
@@ -134,6 +174,17 @@ function Countries() {
       const message = err instanceof Error ? err.message : "Unknown error";
       setError(`Failed to reload the list. (${message})`);
     }
+  };
+
+  // Toggle sort order when clicking the active column, otherwise sort the new column ascending.
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder((order) => (order === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+    setPage(1);
   };
 
   // POST – add a new country
@@ -264,26 +315,50 @@ function Countries() {
       {isInitialLoading && <p>Loading...</p>}
       {error && <p className="error">{error}</p>}
 
-      {!error && countries.length > 0 && (
+      {!error && (
         <div>
-          <div className="table-wrap">
-            <table>
-              <colgroup>
-                <col className="col-alpha2" />
-                <col className="col-alpha3" />
-                <col className="col-name-en" />
-                <col className="col-name-cs" />
-                <col className="col-actions" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>Alpha2</th>
-                  <th>Alpha3</th>
-                  <th>Name EN</th>
-                  <th>Name CS</th>
-                  <th></th>
-                </tr>
-              </thead>
+          <div className="toolbar">
+            <input
+              type="search"
+              className="search-input"
+              placeholder="Search countries..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+
+          {countries.length > 0 ? (
+            <>
+              <div className="table-wrap">
+                <table>
+                  <colgroup>
+                    <col className="col-alpha2" />
+                    <col className="col-alpha3" />
+                    <col className="col-name-en" />
+                    <col className="col-name-cs" />
+                    <col className="col-actions" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      {SORTABLE_COLUMNS.map((col) => (
+                        <th key={col.key}>
+                          <button
+                            type="button"
+                            className="th-sort"
+                            onClick={() => handleSort(col.key)}
+                          >
+                            {col.label}
+                            {sortBy === col.key && (
+                              <span className="sort-indicator">
+                                {sortOrder === "asc" ? " ▲" : " ▼"}
+                              </span>
+                            )}
+                          </button>
+                        </th>
+                      ))}
+                      <th></th>
+                    </tr>
+                  </thead>
               <tbody>
                 {countries.map((country) => {
                   const isEditing = editingId === country.id;
@@ -393,6 +468,12 @@ function Countries() {
               Next
             </button>
           </div>
+            </>
+          ) : (
+            !isInitialLoading && (
+              <p className="empty">No countries found.</p>
+            )
+          )}
         </div>
       )}
 
