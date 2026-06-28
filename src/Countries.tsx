@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Modal from "./Modal";
 
 type Country = {
   id: number;
@@ -85,6 +86,7 @@ function Countries() {
   const [form, setForm] = useState(emptyForm);
   const [isCreating, setIsCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   // Search (searchInput is the live field, search is the debounced value sent to the API)
   const [searchInput, setSearchInput] = useState("");
@@ -222,6 +224,7 @@ function Countries() {
       }
 
       setForm(emptyForm);
+      setIsAddOpen(false);
       await reloadCurrentPage();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
@@ -325,6 +328,13 @@ function Countries() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
+            <button
+              type="button"
+              className="btn-add"
+              onClick={() => setIsAddOpen(true)}
+            >
+              + Add new
+            </button>
           </div>
 
           {countries.length > 0 ? (
@@ -477,10 +487,11 @@ function Countries() {
         </div>
       )}
 
-      <form className="create-form" onSubmit={handleCreate}>
-        <h2>Add country</h2>
-        {formError && <p className="error">{formError}</p>}
-        <div className="form-row">
+      {isAddOpen && (
+        <Modal title="Add country" onClose={() => setIsAddOpen(false)}>
+          <form className="modal-form" onSubmit={handleCreate}>
+            {formError && <p className="error">{formError}</p>}
+            <div className="form-row">
           <label>
             Alpha2
             <input
@@ -523,11 +534,13 @@ function Countries() {
               }
             />
           </label>
-          <button type="submit" disabled={isCreating}>
-            {isCreating ? "Adding..." : "Add"}
-          </button>
-        </div>
-      </form>
+              <button type="submit" disabled={isCreating}>
+                {isCreating ? "Adding..." : "Add"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </section>
   );
 }
