@@ -32,10 +32,8 @@ export type FilterMeta = {
   label: string;
   type: string; // "select" | "text_search" | ...
   options: string[];
-  // Optional: the query-param name to use when filtering GET /species by this
-  // field. When the backend provides it, the FE no longer needs its hardcoded
-  // field->param mapping. Falls back to SpeciesColumn.filterParam.
-  param?: string;
+  // Query-param name to use when filtering GET /species by this field.
+  param: string;
 };
 export type FiltersResponse = { filters: FilterMeta[] };
 
@@ -63,9 +61,8 @@ export type SpeciesColumn = {
   label: string;
   sortable: boolean;
   // field name as used by /meta/filters and /cleanup endpoints (when applicable)
+  // the matching filter's query param comes from /meta/filters
   metaField?: string;
-  // query parameter used to filter GET /species by this column
-  filterParam?: string;
   // name of the lookup (from /meta/lookups) that constrains this column's values
   lookup?: string;
 };
@@ -79,14 +76,12 @@ export const SPECIES_COLUMNS: SpeciesColumn[] = [
     label: "Abbreviation",
     sortable: true,
     metaField: "abbreviation",
-    filterParam: "filter_abb",
   },
   {
     key: "species_group",
     label: "Group",
     sortable: true,
     metaField: "group",
-    filterParam: "filter_group",
     lookup: "mol_species_groups",
   },
   {
@@ -94,7 +89,6 @@ export const SPECIES_COLUMNS: SpeciesColumn[] = [
     label: "Author and year",
     sortable: true,
     metaField: "author_year",
-    filterParam: "filter_author_year",
   },
   { key: "history", label: "History", sortable: true },
   {
@@ -102,7 +96,6 @@ export const SPECIES_COLUMNS: SpeciesColumn[] = [
     label: "Note",
     sortable: true,
     metaField: "note",
-    filterParam: "filter_note",
   },
 ];
 

@@ -110,14 +110,6 @@ function Species() {
     return `${API_BASE}?${params.toString()}`;
   };
 
-  // Resolve the query-param for a filterable column: prefer the value the
-  // backend sends in /meta/filters, fall back to the column's static mapping.
-  const paramForField = (field: string): string | undefined => {
-    const fromMeta = filterMeta.find((m) => m.field === field)?.param;
-    if (fromMeta) return fromMeta;
-    return SPECIES_COLUMNS.find((c) => c.metaField === field)?.filterParam;
-  };
-
   // Load metadata (filters, cleanup fields, lookups). Re-run after mutations so
   // filter options never go stale, and drop any selected filter values that no
   // longer exist.
@@ -145,10 +137,7 @@ function Species() {
       // Prune selected filter values that disappeared from the option lists.
       const optionsByParam = new Map<string, Set<string>>();
       for (const m of nextFilters) {
-        const param =
-          m.param ??
-          SPECIES_COLUMNS.find((c) => c.metaField === m.field)?.filterParam;
-        if (param) optionsByParam.set(param, new Set(m.options));
+        if (m.param) optionsByParam.set(m.param, new Set(m.options));
       }
       setFilters((cur) => {
         let changed = false;
@@ -347,7 +336,7 @@ function Species() {
   const openMeta = openColumn?.metaField
     ? filterMetaByField.get(openColumn.metaField)
     : undefined;
-  const openParam = openMeta ? paramForField(openMeta.field) : undefined;
+  const openParam = openMeta?.param;
 
   return (
     <section className="page" onClick={closeFilter}>
@@ -381,9 +370,7 @@ function Species() {
                     const meta = col.metaField
                       ? filterMetaByField.get(col.metaField)
                       : undefined;
-                    const filterParam = meta
-                      ? paramForField(meta.field)
-                      : undefined;
+                    const filterParam = meta?.param;
                     const hasCleanup =
                       !!col.metaField && cleanupFields.has(col.metaField);
                     const selectedCount = filterParam
