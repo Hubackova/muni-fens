@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Eraser, Filter } from "lucide-react";
-import { API_ROOT, errorMessage, fetchJson } from "./api";
+import { API_ROOT, errorMessage, fetchJson, readApiError } from "./api";
 import Modal from "./Modal";
 import FilterDropdown from "./species/FilterDropdown";
 import CleanupDialog from "./species/CleanupDialog";
@@ -266,6 +266,27 @@ function Species() {
     }
   };
 
+  // DELETE - soft-delete a species. The backend keeps the row so that records
+  // still referencing it in other tables stay intact.
+  const handleDelete = async (row: SpeciesRow) => {
+    const name = row.species_name ?? `#${row.species_id}`;
+    if (!window.confirm(`Really delete the species "${name}"?`)) return;
+
+    try {
+      setIsSaving(true);
+      const response = await fetch(`${API_BASE}/${row.species_id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error(await readApiError(response));
+      if (editingId === row.species_id) setEditingId(null);
+      await reloadAll();
+    } catch (err) {
+      setError(`Failed to delete the species. (${errorMessage(err)})`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const renderCell = (
     row: SpeciesRow,
     col: SpeciesColumn,
@@ -485,16 +506,30 @@ function Species() {
                             </button>
                           </span>
                         ) : (
-                          <button
-                            type="button"
-                            title="Show history"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setHistoryFor(row);
-                            }}
-                          >
-                            History
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              title="Show history"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHistoryFor(row);
+                              }}
+                            >
+                              History
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-delete"
+                              title="Delete"
+                              disabled={isSaving}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(row);
+                              }}
+                            >
+                              &times;
+                            </button>
+                          </>
                         )}
                       </td>
                     </tr>
