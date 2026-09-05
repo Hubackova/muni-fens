@@ -21,6 +21,7 @@ export type SpeciesListResponse = {
 export type SpeciesHistory = {
   unique_id: number;
   species: string;
+  abbreviation: string | null;
   author_year: string | null;
   created_on: string;
   deleted: number;

@@ -44,7 +44,7 @@ function HistoryDialog({ speciesId, speciesName, onClose }: Props) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="modal"
+        className="modal modal-wide"
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
@@ -68,6 +68,7 @@ function HistoryDialog({ speciesId, speciesName, onClose }: Props) {
               <thead>
                 <tr>
                   <th>Species</th>
+                  <th>Abbreviation</th>
                   <th>Author and year</th>
                   <th>Created on</th>
                   <th>Deleted</th>
@@ -77,6 +78,7 @@ function HistoryDialog({ speciesId, speciesName, onClose }: Props) {
                 {history.map((item) => (
                   <tr key={item.unique_id}>
                     <td>{item.species || "-"}</td>
+                    <td>{item.abbreviation ?? "-"}</td>
                     <td>{item.author_year ?? "-"}</td>
                     <td>{formatDate(item.created_on)}</td>
                     <td>{item.deleted ? "yes" : "no"}</td>

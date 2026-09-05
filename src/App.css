@@ -468,6 +468,11 @@ tbody tr:hover {
   text-align: left;
 }
 
+/* The history table has five columns - it needs more room than form modals. */
+.modal-wide {
+  width: 860px;
+}
+
 .modal-head {
   display: flex;
   align-items: center;
