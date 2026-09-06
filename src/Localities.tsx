@@ -283,8 +283,12 @@ function Localities() {
       }
 
       if (col.input === "decimal" || col.input === "integer") {
+        // Coordinates are typed on Czech keyboards, so accept a decimal comma
+        // and hand the API the dot notation it requires.
         const num =
-          col.input === "integer" ? Number.parseInt(raw, 10) : Number(raw);
+          col.input === "integer"
+            ? Number.parseInt(raw, 10)
+            : Number(raw.replace(",", "."));
         if (Number.isNaN(num)) return `${col.label} must be a number.`;
         if (col.key === "latitude" && (num < -90 || num > 90)) {
           return "Latitude must be between -90 and 90.";
@@ -384,10 +388,13 @@ function Localities() {
       );
     }
 
+    // Decimals stay text inputs: a number input silently discards a value
+    // typed with a comma instead of reporting it.
+    const isDecimal = col.input === "decimal";
     return (
       <input
-        type={col.input === "text" ? "text" : "number"}
-        step={col.input === "decimal" ? "any" : undefined}
+        type={col.input === "integer" ? "number" : "text"}
+        inputMode={isDecimal ? "decimal" : undefined}
         value={editValues[col.key] ?? ""}
         onClick={(e) => e.stopPropagation()}
         onChange={(e) =>

@@ -83,8 +83,21 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
     input: "text",
     nullable: false,
   },
-  { key: "latitude", label: "Latitude", sortable: false, input: "decimal" },
-  { key: "longitude", label: "Longitude", sortable: false, input: "decimal" },
+  // WGS84 decimal degrees. The API also refuses to null them.
+  {
+    key: "latitude",
+    label: "Latitude",
+    sortable: false,
+    input: "decimal",
+    nullable: false,
+  },
+  {
+    key: "longitude",
+    label: "Longitude",
+    sortable: false,
+    input: "decimal",
+    nullable: false,
+  },
   {
     key: "country",
     label: "Country",
