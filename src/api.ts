@@ -52,3 +52,21 @@ export async function fetchJson<T>(
 export function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : "Unknown error";
 }
+
+// ---------------------------------------------------------------------------
+// Metadata shared by every entity page.
+
+// GET /meta/filters/{entity}
+export type FilterMeta = {
+  field: string;
+  label: string;
+  type: string; // "select" | "text_search" | ...
+  options: string[];
+  // Query-param name to use when filtering the entity's list endpoint.
+  param: string;
+};
+export type FiltersResponse = { filters: FilterMeta[] };
+
+// GET /meta/lookups -> { "<lookup_name>": [{ value, label }, ...] }
+export type LookupOption = { value: string; label: string };
+export type LookupsResponse = Record<string, LookupOption[]>;

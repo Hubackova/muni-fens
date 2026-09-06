@@ -1,9 +1,10 @@
 import { useState } from "react";
 import "./App.css";
 import Countries from "./Countries";
+import Localities from "./Localities";
 import Species from "./Species";
 
-type Tab = "species" | "countries";
+type Tab = "species" | "countries" | "localities";
 
 function App() {
   const [tab, setTab] = useState<Tab>("species");
@@ -25,8 +26,17 @@ function App() {
         >
           Countries
         </button>
+        <button
+          type="button"
+          className={tab === "localities" ? "nav-active" : ""}
+          onClick={() => setTab("localities")}
+        >
+          Localities
+        </button>
       </nav>
-      {tab === "species" ? <Species /> : <Countries />}
+      {tab === "species" && <Species />}
+      {tab === "countries" && <Countries />}
+      {tab === "localities" && <Localities />}
     </>
   );
 }

@@ -27,17 +27,6 @@ export type SpeciesHistory = {
   deleted: number;
 };
 
-// GET /meta/filters/{entity}
-export type FilterMeta = {
-  field: string;
-  label: string;
-  type: string; // "select" | "text_search" | ...
-  options: string[];
-  // Query-param name to use when filtering GET /species by this field.
-  param: string;
-};
-export type FiltersResponse = { filters: FilterMeta[] };
-
 // GET /cleanup/{entity}
 export type CleanupField = {
   field: string;
@@ -45,10 +34,6 @@ export type CleanupField = {
   column: string;
 };
 export type CleanupFieldsResponse = { cleanup: CleanupField[] };
-
-// GET /meta/lookups -> { "<lookup_name>": [{ value, label }, ...] }
-export type LookupOption = { value: string; label: string };
-export type LookupsResponse = Record<string, LookupOption[]>;
 
 // GET /species/search -> [{ id, name }, ...]
 export type SpeciesSearchResult = { id: number; name: string };

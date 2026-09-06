@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FilterMeta } from "./types";
+import type { FilterMeta } from "./api";
 
 type Props = {
   meta: FilterMeta;

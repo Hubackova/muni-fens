@@ -1,7 +1,12 @@
 import { useState } from "react";
-import { API_ROOT, errorMessage, fetchJson } from "../api";
+import {
+  API_ROOT,
+  errorMessage,
+  fetchJson,
+  type LookupsResponse,
+} from "../api";
 import SpeciesAutocomplete from "./SpeciesAutocomplete";
-import type { LookupsResponse, SpeciesSearchResult } from "./types";
+import type { SpeciesSearchResult } from "./types";
 
 type Props = {
   lookups: LookupsResponse;

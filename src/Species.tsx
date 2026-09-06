@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Eraser, Filter } from "lucide-react";
-import { API_ROOT, errorMessage, fetchJson, readApiError } from "./api";
+import {
+  API_ROOT,
+  errorMessage,
+  fetchJson,
+  readApiError,
+  type FilterMeta,
+  type FiltersResponse,
+  type LookupsResponse,
+} from "./api";
 import Modal from "./Modal";
-import FilterDropdown from "./species/FilterDropdown";
+import FilterDropdown from "./FilterDropdown";
 import CleanupDialog from "./species/CleanupDialog";
 import HistoryDialog from "./species/HistoryDialog";
 import SynonymForm from "./species/SynonymForm";
@@ -10,10 +18,7 @@ import {
   SPECIES_COLUMNS,
   SPECIES_DEFAULT_SORT,
   SPECIES_ENTITY,
-  type FilterMeta,
-  type FiltersResponse,
   type CleanupFieldsResponse,
-  type LookupsResponse,
   type Species as SpeciesRow,
   type SpeciesColumn,
   type SpeciesListResponse,

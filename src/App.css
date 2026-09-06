@@ -176,7 +176,8 @@ td {
   background: #fff8e1;
 }
 
-td input {
+td input,
+td select {
   width: 100%;
   box-sizing: border-box;
   padding: 0.25rem 0.4rem;
@@ -285,8 +286,12 @@ thead th {
   cursor: pointer;
 }
 
-.th-sort:hover {
+.th-sort:hover:not(:disabled) {
   color: #0969da;
+}
+
+.th-sort:disabled {
+  cursor: default;
 }
 
 .sort-indicator {
@@ -636,4 +641,126 @@ tbody tr:hover {
 .autocomplete-chip small,
 .autocomplete-list small {
   color: #57606a;
+}
+
+/* Localities -------------------------------------------------------------- */
+
+/* 16 columns do not fit the 1280px the other tables use. Every column below
+   is fixed, so the leftover width lands in .col-note (width: auto). */
+.localities-table {
+  min-width: 2400px;
+}
+
+.col-id {
+  width: 60px;
+}
+.col-site_id,
+.col-field_code {
+  width: 100px;
+}
+.col-name {
+  width: 180px;
+}
+.col-latitude,
+.col-longitude {
+  width: 95px;
+}
+.col-country,
+.col-settlement,
+.col-current_habitat {
+  width: 130px;
+}
+.col-state {
+  width: 150px;
+}
+.col-masl,
+.col-eur_grid,
+.col-eur_subgrid,
+.col-deleted {
+  width: 80px;
+}
+.col-entry_point {
+  width: 100px;
+}
+
+.toolbar-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #57606a;
+}
+
+.toolbar-field select,
+.num-input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font: inherit;
+  color: #24292f;
+}
+
+.num-input {
+  width: 80px;
+}
+
+/* Prune dialog: irreversible, so it reads like a warning. */
+.danger-note {
+  background: #fdecef;
+  border: 1px solid #f3c2cc;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.prune-confirm {
+  display: block;
+}
+
+.prune-confirm input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.btn-danger {
+  background: #b00020 !important;
+  border-color: #b00020 !important;
+  color: #fff;
+}
+
+/* Type-ahead used both in table cells and in the merge dialog. */
+.autocomplete-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.merge-option {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.merge-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The merge comparison table wraps its values instead of clipping them. */
+.merge-table td,
+.merge-table th {
+  white-space: normal;
+}
+
+.merge-table {
+  table-layout: auto;
 }
