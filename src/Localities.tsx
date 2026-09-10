@@ -4,6 +4,9 @@ import {
   API_ROOT,
   errorMessage,
   fetchJson,
+  sendJson,
+  filterParams,
+  isValueFilter,
   type FilterMeta,
   type FiltersResponse,
   type LookupsResponse,
@@ -50,7 +53,7 @@ function Localities() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
-  // Sorting (sortBy holds the column label the API expects)
+  // Sorting (sortBy holds the field name the API expects, i.e. the column key)
   const [sortBy, setSortBy] = useState<string>(LOCALITY_DEFAULT_SORT);
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -59,10 +62,11 @@ function Localities() {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [filterAnchor, setFilterAnchor] = useState<DOMRect | null>(null);
 
-  // Filters that have no option list: an altitude range and the deleted flag.
-  const [maslInput, setMaslInput] = useState({ min: "", max: "" });
-  const [masl, setMasl] = useState({ min: "", max: "" });
+  // Soft-deleted rows stay in a toolbar switch: its column is hidden by
+  // default, so its header filter would be unreachable.
   const [deletedMode, setDeletedMode] = useState<DeletedMode>("active");
+  // Set after a merge so the user can see where the records ended up.
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -117,8 +121,6 @@ function Localities() {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
-    if (masl.min) params.set("filter_masl_min", masl.min);
-    if (masl.max) params.set("filter_masl_max", masl.max);
     if (deletedMode !== "all") {
       params.set("filter_deleted", deletedMode === "deleted" ? "1" : "0");
     }
@@ -154,14 +156,16 @@ function Localities() {
         ),
         fetchJson<LookupsResponse>(`${API_ROOT}/meta/lookups`, opts),
       ]);
-      const nextFilters = filtersRes.filters ?? [];
+      const nextFilters = (filtersRes.filters ?? []).filter(
+        (m) => m.field !== "deleted",
+      );
       setFilterMeta(nextFilters);
       setLookups(lookupsRes ?? {});
 
       // Drop selected filter values that disappeared from the option lists.
       const optionsByParam = new Map<string, Set<string>>();
       for (const m of nextFilters) {
-        if (m.param) optionsByParam.set(m.param, new Set(m.options));
+        if (isValueFilter(m)) optionsByParam.set(m.param, new Set(m.options));
       }
       setFilters((cur) => {
         let changed = false;
@@ -201,8 +205,6 @@ function Localities() {
     sortOrder,
     search,
     filtersKey,
-    masl.min,
-    masl.max,
     deletedMode,
   ]);
 
@@ -215,23 +217,15 @@ function Localities() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMasl(maslInput);
-      setPage(1);
-    }, INPUT_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [maslInput]);
-
   const reloadAll = async () => {
     await Promise.all([loadLocalities(), loadMeta()]);
   };
 
-  const handleSort = (label: string) => {
-    if (sortBy === label) {
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
       setSortOrder((order) => (order === "asc" ? "desc" : "asc"));
     } else {
-      setSortBy(label);
+      setSortBy(field);
       setSortOrder("asc");
     }
     setPage(1);
@@ -328,11 +322,7 @@ function Localities() {
 
     try {
       setIsSaving(true);
-      await fetchJson(`${API_BASE}/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patch),
-      });
+      await sendJson(`${API_BASE}/${row.id}`, "PATCH", patch);
       cancelEditing();
       setError(null);
       await reloadAll();
@@ -410,12 +400,12 @@ function Localities() {
   const openMeta = openColumn?.metaField
     ? filterMetaByField.get(openColumn.metaField)
     : undefined;
-  const openParam = openMeta?.param;
 
   return (
     <section className="page" onClick={closeFilter}>
       {isInitialLoading && <p>Loading...</p>}
       {error && <p className="error">{error}</p>}
+      {notice && <p className="notice">{notice}</p>}
 
       <div className="toolbar">
         <input
@@ -427,35 +417,13 @@ function Localities() {
         />
 
         <label className="toolbar-field">
-          m a.s.l.
-          <input
-            type="number"
-            className="num-input"
-            placeholder="min"
-            value={maslInput.min}
-            onChange={(e) =>
-              setMaslInput((m) => ({ ...m, min: e.target.value }))
-            }
-          />
-          <input
-            type="number"
-            className="num-input"
-            placeholder="max"
-            value={maslInput.max}
-            onChange={(e) =>
-              setMaslInput((m) => ({ ...m, max: e.target.value }))
-            }
-          />
-        </label>
-
-        <label className="toolbar-field">
           Deleted
           <select
             value={deletedMode}
             onChange={(e) => {
               const mode = e.target.value as DeletedMode;
               setDeletedMode(mode);
-              if (mode !== "all" && sortBy === "Deleted") {
+              if (mode !== "all" && sortBy === "deleted") {
                 setSortBy(LOCALITY_DEFAULT_SORT);
                 setSortOrder("asc");
               }
@@ -487,9 +455,9 @@ function Localities() {
                     const meta = col.metaField
                       ? filterMetaByField.get(col.metaField)
                       : undefined;
-                    const filterParam = meta?.param;
-                    const selectedCount = filterParam
-                      ? (filters[filterParam]?.length ?? 0)
+                    const selectedCount = meta
+                      ? filterParams(meta).filter((p) => filters[p]?.length)
+                          .length
                       : 0;
                     return (
                       <th key={col.key} className={`col-${col.key}`}>
@@ -500,11 +468,11 @@ function Localities() {
                             disabled={!col.sortable}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (col.sortable) handleSort(col.label);
+                              if (col.sortable) handleSort(col.key);
                             }}
                           >
                             {col.label}
-                            {sortBy === col.label &&
+                            {sortBy === col.key &&
                               (sortOrder === "asc" ? (
                                 <ArrowUp size={13} className="sort-indicator" />
                               ) : (
@@ -515,7 +483,7 @@ function Localities() {
                               ))}
                           </button>
 
-                          {meta && filterParam && (
+                          {meta && (
                             <button
                               type="button"
                               className={
@@ -626,18 +594,24 @@ function Localities() {
         !error && <p className="empty">No localities found.</p>
       )}
 
-      {openMeta && openParam && filterAnchor && (
+      {openMeta && filterAnchor && (
         <FilterDropdown
           meta={openMeta}
           anchor={filterAnchor}
-          selected={filters[openParam] ?? []}
-          onChange={(values) => setColumnFilter(openParam, values)}
+          values={filters}
+          onChange={setColumnFilter}
           onClose={closeFilter}
         />
       )}
 
       {isMergeOpen && (
-        <MergeDialog onClose={() => setIsMergeOpen(false)} onDone={reloadAll} />
+        <MergeDialog
+          onClose={() => setIsMergeOpen(false)}
+          onDone={async (newId: number) => {
+            setNotice(`Localities merged into #${newId}.`);
+            await reloadAll();
+          }}
+        />
       )}
 
       {pruneFor && (

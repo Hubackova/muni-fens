@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { API_ROOT, errorMessage, fetchJson } from "../api";
+import {
+  API_ROOT,
+  errorMessage,
+  fetchJson,
+  type StatusIdResponse,
+} from "../api";
 import Autocomplete from "../Autocomplete";
 import type { Locality, LocalitySearchResult } from "./types";
 
 type Props = {
   onClose: () => void;
-  onDone: () => void; // reload the table after a successful merge
+  // Receives the id of the locality the records were merged into.
+  onDone: (newId: number) => void;
 };
 
 type Side = "A" | "B";
@@ -103,17 +109,20 @@ function MergeDialog({ onClose, onDone }: Props) {
     try {
       setIsMerging(true);
       setError(null);
-      await fetchJson(`${API_ROOT}/localities/merge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          locality_a_id: pickA.id,
-          locality_b_id: pickB.id,
-          ...choices,
-          entry_point: effectiveEntryPoint,
-        }),
-      });
-      onDone();
+      const created = await fetchJson<StatusIdResponse>(
+        `${API_ROOT}/localities/merge`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            locality_a_id: pickA.id,
+            locality_b_id: pickB.id,
+            ...choices,
+            entry_point: effectiveEntryPoint,
+          }),
+        },
+      );
+      onDone(created.id);
       onClose();
     } catch (err) {
       setError(errorMessage(err));

@@ -43,7 +43,7 @@ export type SortOrder = "asc" | "desc";
 export type SpeciesColumn = {
   // property in the Species row object
   key: keyof Species;
-  // header text; for sortable columns this is also the sort_by value the API expects
+  // header text (display only - sort_by uses `key`)
   label: string;
   sortable: boolean;
   // field name as used by /meta/filters and /cleanup endpoints (when applicable)
@@ -53,7 +53,7 @@ export type SpeciesColumn = {
   lookup?: string;
 };
 
-// Column definitions. `label` doubles as the sort_by value the backend accepts.
+// Column definitions. The API sorts by the field name, which matches `key`.
 export const SPECIES_COLUMNS: SpeciesColumn[] = [
   { key: "species_id", label: "Species ID", sortable: true },
   { key: "species_name", label: "Species name", sortable: true },
@@ -85,5 +85,5 @@ export const SPECIES_COLUMNS: SpeciesColumn[] = [
   },
 ];
 
-export const SPECIES_DEFAULT_SORT = "Species name";
+export const SPECIES_DEFAULT_SORT = "species_name";
 export const SPECIES_ENTITY = "species";

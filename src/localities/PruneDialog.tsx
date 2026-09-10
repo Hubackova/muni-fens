@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_ROOT, errorMessage, readApiError } from "../api";
+import { API_ROOT, errorMessage, sendJson } from "../api";
 import type { Locality } from "./types";
 
 type Props = {
@@ -23,11 +23,7 @@ function PruneDialog({ locality, onClose, onDone }: Props) {
     try {
       setIsPruning(true);
       setError(null);
-      const response = await fetch(
-        `${API_ROOT}/localities/${locality.id}/prune`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) throw new Error(await readApiError(response));
+      await sendJson(`${API_ROOT}/localities/${locality.id}/prune`, "DELETE");
       onDone();
       onClose();
     } catch (err) {

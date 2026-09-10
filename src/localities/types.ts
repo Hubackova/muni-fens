@@ -43,9 +43,7 @@ type EditInput = "text" | "decimal" | "integer" | "country" | "lookup";
 
 export type LocalityColumn = {
   key: keyof Locality;
-  // header text; for sortable columns this is also the sort_by value the API
-  // expects (verified against the running API - the rest reject with
-  // INVALID_SORT_COLUMN)
+  // header text (display only - sort_by uses `key`)
   label: string;
   sortable: boolean;
   // field name as used by /meta/filters (when the backend offers the filter)
@@ -87,14 +85,16 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
   {
     key: "latitude",
     label: "Latitude",
-    sortable: false,
+    sortable: true,
+    metaField: "latitude",
     input: "decimal",
     nullable: false,
   },
   {
     key: "longitude",
     label: "Longitude",
-    sortable: false,
+    sortable: true,
+    metaField: "longitude",
     input: "decimal",
     nullable: false,
   },
@@ -126,10 +126,11 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
     key: "masl",
     label: "m a.s.l.",
     sortable: true,
+    metaField: "masl",
     input: "integer",
     nullable: true,
   },
-  { key: "current_habitat", label: "Current habitat", sortable: false },
+  { key: "current_habitat", label: "Current habitat", sortable: true },
   {
     key: "eur_grid",
     label: "Grid",
@@ -141,6 +142,7 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
   {
     key: "eur_subgrid",
     label: "Subgrid",
+    // the only column the API still rejects as a sort key
     sortable: false,
     metaField: "eur_subgrid",
     input: "lookup",
@@ -150,19 +152,24 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
   {
     key: "note",
     label: "Note",
-    sortable: false,
+    sortable: true,
     metaField: "note",
     input: "text",
     nullable: true,
   },
-  { key: "entry_point", label: "Entry point", sortable: true },
+  {
+    key: "entry_point",
+    label: "Entry point",
+    sortable: true,
+    metaField: "entry_point",
+  },
   { key: "deleted", label: "Deleted", sortable: true },
 ];
 
 // Columns the PATCH body can carry, in the order they appear in the table.
 export const LOCALITY_EDITABLE = LOCALITY_COLUMNS.filter((c) => c.input);
 
-export const LOCALITY_DEFAULT_SORT = "ID";
+export const LOCALITY_DEFAULT_SORT = "id";
 export const LOCALITY_ENTITY = "localities";
 export const SUBGRID_LOOKUP = "loc_eur_subgrid";
 

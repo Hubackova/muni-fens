@@ -4,7 +4,9 @@ import {
   API_ROOT,
   errorMessage,
   fetchJson,
-  readApiError,
+  sendJson,
+  filterParams,
+  isValueFilter,
   type FilterMeta,
   type FiltersResponse,
   type LookupsResponse,
@@ -53,7 +55,7 @@ function Species() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
 
-  // Sorting (sortBy holds the column label the API expects)
+  // Sorting (sortBy holds the field name the API expects, i.e. the column key)
   const [sortBy, setSortBy] = useState<string>(SPECIES_DEFAULT_SORT);
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -142,7 +144,7 @@ function Species() {
       // Prune selected filter values that disappeared from the option lists.
       const optionsByParam = new Map<string, Set<string>>();
       for (const m of nextFilters) {
-        if (m.param) optionsByParam.set(m.param, new Set(m.options));
+        if (isValueFilter(m)) optionsByParam.set(m.param, new Set(m.options));
       }
       setFilters((cur) => {
         let changed = false;
@@ -211,11 +213,11 @@ function Species() {
     await Promise.all([loadSpecies(), loadMeta()]);
   };
 
-  const handleSort = (label: string) => {
-    if (sortBy === label) {
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
       setSortOrder((order) => (order === "asc" ? "desc" : "asc"));
     } else {
-      setSortBy(label);
+      setSortBy(field);
       setSortOrder("asc");
     }
     setPage(1);
@@ -252,15 +254,11 @@ function Species() {
     }
     try {
       setIsSaving(true);
-      await fetchJson(`${API_BASE}/${row.species_id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          species,
-          abbreviation: editValues.abbreviation.trim() || null,
-          note: editValues.note.trim() || null,
-          type: editValues.species_group || null,
-        }),
+      await sendJson(`${API_BASE}/${row.species_id}`, "PATCH", {
+        species,
+        abbreviation: editValues.abbreviation.trim() || null,
+        note: editValues.note.trim() || null,
+        type: editValues.species_group || null,
       });
       setEditingId(null);
       await reloadAll();
@@ -279,10 +277,7 @@ function Species() {
 
     try {
       setIsSaving(true);
-      const response = await fetch(`${API_BASE}/${row.species_id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error(await readApiError(response));
+      await sendJson(`${API_BASE}/${row.species_id}`, "DELETE");
       if (editingId === row.species_id) setEditingId(null);
       await reloadAll();
     } catch (err) {
@@ -362,7 +357,6 @@ function Species() {
   const openMeta = openColumn?.metaField
     ? filterMetaByField.get(openColumn.metaField)
     : undefined;
-  const openParam = openMeta?.param;
 
   return (
     <section className="page" onClick={closeFilter}>
@@ -396,11 +390,11 @@ function Species() {
                     const meta = col.metaField
                       ? filterMetaByField.get(col.metaField)
                       : undefined;
-                    const filterParam = meta?.param;
                     const hasCleanup =
                       !!col.metaField && cleanupFields.has(col.metaField);
-                    const selectedCount = filterParam
-                      ? (filters[filterParam]?.length ?? 0)
+                    const selectedCount = meta
+                      ? filterParams(meta).filter((p) => filters[p]?.length)
+                          .length
                       : 0;
                     const activeFilter = selectedCount > 0;
                     return (
@@ -411,11 +405,11 @@ function Species() {
                             className="th-sort"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleSort(col.label);
+                              handleSort(col.key);
                             }}
                           >
                             {col.label}
-                            {sortBy === col.label &&
+                            {sortBy === col.key &&
                               (sortOrder === "asc" ? (
                                 <ArrowUp size={13} className="sort-indicator" />
                               ) : (
@@ -426,7 +420,7 @@ function Species() {
                               ))}
                           </button>
 
-                          {meta && filterParam && (
+                          {meta && (
                             <button
                               type="button"
                               className={
@@ -570,12 +564,12 @@ function Species() {
         !error && <p className="empty">No species found.</p>
       )}
 
-      {openMeta && openParam && filterAnchor && (
+      {openMeta && filterAnchor && (
         <FilterDropdown
           meta={openMeta}
           anchor={filterAnchor}
-          selected={filters[openParam] ?? []}
-          onChange={(values) => setColumnFilter(openParam, values)}
+          values={filters}
+          onChange={setColumnFilter}
           onClose={closeFilter}
         />
       )}

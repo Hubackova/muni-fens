@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FilterMeta } from "./api";
+import { isValueFilter, type FilterMeta } from "./api";
 
 type Props = {
   meta: FilterMeta;
   anchor: DOMRect; // screen rect of the button that opened the dropdown
-  selected: string[];
-  onChange: (values: string[]) => void;
+  // Active values keyed by query param; a range filter uses two of them.
+  values: Record<string, string[]>;
+  onChange: (param: string, values: string[]) => void;
   onClose: () => void;
 };
 
 const WIDTH = 240;
 
-// A small popover listing a column's available values as a multi-select.
-// For "text_search" filters an inner text box narrows the list of options.
+// A small popover for one column's filter. Value filters ("select" and
+// "text_search") list the available values as a multi-select - text_search
+// adds an inner box that narrows that list. A "range" filter has no options
+// and edits the min/max query params instead.
 // Rendered with position:fixed so it isn't clipped by the scrollable table.
-function FilterDropdown({ meta, anchor, selected, onChange, onClose }: Props) {
+function FilterDropdown({ meta, anchor, values, onChange, onClose }: Props) {
   const [query, setQuery] = useState("");
-  const showSearch = meta.type === "text_search";
 
   // Reposition relative to the anchor; close on scroll/resize so it never
   // drifts away from its column.
@@ -29,20 +31,6 @@ function FilterDropdown({ meta, anchor, selected, onChange, onClose }: Props) {
       window.removeEventListener("resize", onScrollOrResize);
     };
   }, [onClose]);
-
-  const options = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return meta.options;
-    return meta.options.filter((o) => o.toLowerCase().includes(q));
-  }, [meta.options, query]);
-
-  const toggle = (value: string) => {
-    if (selected.includes(value)) {
-      onChange(selected.filter((v) => v !== value));
-    } else {
-      onChange([...selected, value]);
-    }
-  };
 
   // Keep the panel inside the viewport horizontally.
   const left = Math.min(anchor.left, window.innerWidth - WIDTH - 8);
@@ -61,14 +49,72 @@ function FilterDropdown({ meta, anchor, selected, onChange, onClose }: Props) {
     >
       <div className="filter-dropdown-head">
         <strong>{meta.label}</strong>
-        {selected.length > 0 && (
-          <button type="button" className="link-btn" onClick={() => onChange([])}>
-            Clear
-          </button>
-        )}
       </div>
 
-      {showSearch && (
+      {isValueFilter(meta) ? (
+        <ValueFilter
+          meta={meta}
+          selected={values[meta.param] ?? []}
+          query={query}
+          setQuery={setQuery}
+          onChange={(next) => onChange(meta.param, next)}
+        />
+      ) : (
+        <RangeFilter
+          min={values[meta.min_param]?.[0] ?? ""}
+          max={values[meta.max_param]?.[0] ?? ""}
+          bounds={meta}
+          onCommit={(param, value) => onChange(param, value ? [value] : [])}
+        />
+      )}
+
+      <div className="filter-dropdown-foot">
+        <button type="button" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+type ValueFilterProps = {
+  meta: Extract<FilterMeta, { options: string[] }>;
+  selected: string[];
+  query: string;
+  setQuery: (value: string) => void;
+  onChange: (values: string[]) => void;
+};
+
+function ValueFilter({
+  meta,
+  selected,
+  query,
+  setQuery,
+  onChange,
+}: ValueFilterProps) {
+  const options = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return meta.options;
+    return meta.options.filter((o) => o.toLowerCase().includes(q));
+  }, [meta.options, query]);
+
+  const toggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  return (
+    <>
+      {selected.length > 0 && (
+        <button type="button" className="link-btn" onClick={() => onChange([])}>
+          Clear
+        </button>
+      )}
+
+      {meta.type === "text_search" && (
         <input
           type="search"
           className="filter-search"
@@ -95,12 +141,65 @@ function FilterDropdown({ meta, anchor, selected, onChange, onClose }: Props) {
           ))
         )}
       </div>
+    </>
+  );
+}
 
-      <div className="filter-dropdown-foot">
-        <button type="button" onClick={onClose}>
-          Done
+type RangeFilterProps = {
+  min: string;
+  max: string;
+  bounds: Extract<FilterMeta, { type: "range" }>;
+  onCommit: (param: string, value: string) => void;
+};
+
+// Committed on blur rather than on every keystroke, so typing "1500" does not
+// reload the table four times.
+function RangeFilter({ min, max, bounds, onCommit }: RangeFilterProps) {
+  // Seeded once: nothing outside this popover edits the two params while it
+  // is open, and Clear below resets the draft itself.
+  const [draft, setDraft] = useState({ min, max });
+
+  const commit = (side: "min" | "max") => {
+    const param = side === "min" ? bounds.min_param : bounds.max_param;
+    const current = side === "min" ? min : max;
+    if (draft[side] !== current) onCommit(param, draft[side].trim());
+  };
+
+  return (
+    <div className="filter-range">
+      {(min || max) && (
+        <button
+          type="button"
+          className="link-btn"
+          onClick={() => {
+            setDraft({ min: "", max: "" });
+            onCommit(bounds.min_param, "");
+            onCommit(bounds.max_param, "");
+          }}
+        >
+          Clear
         </button>
-      </div>
+      )}
+      <label>
+        From
+        <input
+          type="number"
+          value={draft.min}
+          placeholder={bounds.min === null ? "" : String(bounds.min)}
+          onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
+          onBlur={() => commit("min")}
+        />
+      </label>
+      <label>
+        To
+        <input
+          type="number"
+          value={draft.max}
+          placeholder={bounds.max === null ? "" : String(bounds.max)}
+          onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
+          onBlur={() => commit("max")}
+        />
+      </label>
     </div>
   );
 }

@@ -56,17 +56,67 @@ export function errorMessage(err: unknown): string {
 // ---------------------------------------------------------------------------
 // Metadata shared by every entity page.
 
-// GET /meta/filters/{entity}
-export type FilterMeta = {
+// GET /meta/filters/{entity}. The backend sends a discriminated union:
+// "select" and "text_search" both offer a list of values under one query
+// param, while "range" spans two params and has no option list at all.
+type FilterMetaBase = {
   field: string;
   label: string;
-  type: string; // "select" | "text_search" | ...
-  options: string[];
-  // Query-param name to use when filtering the entity's list endpoint.
-  param: string;
 };
+
+export type ValueFilterMeta = FilterMetaBase & {
+  type: "select" | "text_search";
+  // Query param the selected values are appended to (repeat = OR).
+  param: string;
+  options: string[];
+};
+
+export type RangeFilterMeta = FilterMetaBase & {
+  type: "range";
+  min_param: string;
+  max_param: string;
+  // Bounds present in the data, for placeholders.
+  min: number | null;
+  max: number | null;
+};
+
+export type FilterMeta = ValueFilterMeta | RangeFilterMeta;
+
 export type FiltersResponse = { filters: FilterMeta[] };
+
+export function isValueFilter(meta: FilterMeta): meta is ValueFilterMeta {
+  return meta.type === "select" || meta.type === "text_search";
+}
+
+// Every query param a filter can write to, so callers can clear or count them.
+export function filterParams(meta: FilterMeta): string[] {
+  return isValueFilter(meta) ? [meta.param] : [meta.min_param, meta.max_param];
+}
+
+// Write responses: {status, id} for updates, {created_id} for creates.
+export type StatusIdResponse = { status: string; id: number };
 
 // GET /meta/lookups -> { "<lookup_name>": [{ value, label }, ...] }
 export type LookupOption = { value: string; label: string };
 export type LookupsResponse = Record<string, LookupOption[]>;
+
+// Write requests whose response body we do not need. Several endpoints answer
+// 200 with an empty body, which fetchJson would choke on in response.json().
+export async function sendJson(
+  input: string,
+  method: string,
+  body?: unknown,
+): Promise<void> {
+  const response = await fetch(input, {
+    method,
+    ...(body === undefined
+      ? {}
+      : {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+  });
+  if (!response.ok) {
+    throw new Error(await readApiError(response));
+  }
+}
