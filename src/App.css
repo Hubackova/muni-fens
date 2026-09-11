@@ -201,13 +201,18 @@ td select {
   font: inherit;
 }
 
+.cell-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .btn-delete {
   color: #b00020;
   font-weight: 700;
   line-height: 1;
 }
 
-.btn-delete:hover {
+.btn-delete:hover:not(:disabled) {
   background: #fdecef;
 }
 

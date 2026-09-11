@@ -190,7 +190,9 @@ function MergeDialog({ onClose, onDone }: Props) {
         {ready && detailA && detailB && (
           <>
             <p className="hint">
-              Pick the value the new locality inherits for every field.
+              Pick the value the new locality inherits for every field. Current
+              habitat is not listed: it is derived from the newest sampling of
+              the two localities.
             </p>
             <div className="table-wrap">
               <table className="merge-table">

@@ -7,7 +7,7 @@ export type Locality = {
   name: string;
   latitude: number;
   longitude: number;
-  // GET returns the country *name* (e.g. "Czechia"); PATCH expects its alpha3.
+  // alpha3 everywhere: list, detail and PATCH all speak the country code.
   country: string;
   settlement: string | null;
   state: string | null;
@@ -18,6 +18,8 @@ export type Locality = {
   note: string | null;
   entry_point: string; // ECO / DNA - the interface the locality was entered through
   deleted: number;
+  // Only the list endpoint reports it; a referenced locality cannot be pruned.
+  in_use?: boolean;
 };
 
 export type LocalityListResponse = {

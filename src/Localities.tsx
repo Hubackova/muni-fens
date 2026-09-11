@@ -71,7 +71,7 @@ function Localities() {
   // Inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<EditValues>({});
-  // Country is picked from a dropdown of names but PATCHed as alpha3, so the
+  // The type-ahead offers country names while the API speaks alpha3, so the
   // whole country record is kept instead of the edited string.
   const [editCountry, setEditCountry] = useState<CountrySearchResult | null>(
     null,
@@ -297,13 +297,7 @@ function Localities() {
       if (raw !== original) patch[col.key] = raw;
     }
 
-    // The row carries the country *name* while PATCH wants the alpha3 code, so
-    // an unchanged country is recognised by either representation.
-    if (
-      editCountry &&
-      editCountry.name_en !== row.country &&
-      editCountry.alpha3 !== row.country
-    ) {
+    if (editCountry && editCountry.alpha3 !== row.country) {
       patch.country = editCountry.alpha3;
     }
     return patch;
@@ -551,7 +545,14 @@ function Localities() {
                           <button
                             type="button"
                             className="btn-delete"
-                            title="Prune (permanent delete)"
+                            // The API refuses to prune a referenced locality;
+                            // in_use lets us say so before the dialog.
+                            disabled={row.in_use}
+                            title={
+                              row.in_use
+                                ? "Used by existing records - cannot be pruned"
+                                : "Prune (permanent delete)"
+                            }
                             onClick={(e) => {
                               e.stopPropagation();
                               setPruneFor(row);
