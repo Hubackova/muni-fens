@@ -3,9 +3,10 @@ import "./App.css";
 import AddNew from "./AddNew";
 import Countries from "./Countries";
 import Localities from "./Localities";
+import Samplings from "./Samplings";
 import Species from "./Species";
 
-type Tab = "species" | "countries" | "localities" | "add";
+type Tab = "species" | "countries" | "localities" | "samplings" | "add";
 
 function App() {
   const [tab, setTab] = useState<Tab>("species");
@@ -36,6 +37,13 @@ function App() {
         </button>
         <button
           type="button"
+          className={tab === "samplings" ? "nav-active" : ""}
+          onClick={() => setTab("samplings")}
+        >
+          Samplings
+        </button>
+        <button
+          type="button"
           className={tab === "add" ? "nav-active" : ""}
           onClick={() => setTab("add")}
         >
@@ -45,6 +53,7 @@ function App() {
       {tab === "species" && <Species />}
       {tab === "countries" && <Countries />}
       {tab === "localities" && <Localities />}
+      {tab === "samplings" && <Samplings />}
       {tab === "add" && <AddNew />}
     </>
   );

@@ -14,8 +14,8 @@ const WIDTH = 240;
 
 // A small popover for one column's filter. Value filters ("select" and
 // "text_search") list the available values as a multi-select - text_search
-// adds an inner box that narrows that list. A "range" filter has no options
-// and edits the min/max query params instead.
+// adds an inner box that narrows that list. "range" and "date_range" have no
+// options and edit the min/max query params instead.
 // Rendered with position:fixed so it isn't clipped by the scrollable table.
 function FilterDropdown({ meta, anchor, values, onChange, onClose }: Props) {
   const [query, setQuery] = useState("");
@@ -148,13 +148,14 @@ function ValueFilter({
 type RangeFilterProps = {
   min: string;
   max: string;
-  bounds: Extract<FilterMeta, { type: "range" }>;
+  bounds: Extract<FilterMeta, { type: "range" | "date_range" }>;
   onCommit: (param: string, value: string) => void;
 };
 
 // Committed on blur rather than on every keystroke, so typing "1500" does not
 // reload the table four times.
 function RangeFilter({ min, max, bounds, onCommit }: RangeFilterProps) {
+  const isDate = bounds.type === "date_range";
   // Seeded once: nothing outside this popover edits the two params while it
   // is open, and Clear below resets the draft itself.
   const [draft, setDraft] = useState({ min, max });
@@ -183,8 +184,12 @@ function RangeFilter({ min, max, bounds, onCommit }: RangeFilterProps) {
       <label>
         From
         <input
-          type="number"
+          type={isDate ? "date" : "number"}
           value={draft.min}
+          // A date input ignores the placeholder, so the bounds the backend
+          // reports are handed to the picker instead.
+          min={isDate && bounds.min !== null ? String(bounds.min) : undefined}
+          max={isDate && bounds.max !== null ? String(bounds.max) : undefined}
           placeholder={bounds.min === null ? "" : String(bounds.min)}
           onChange={(e) => setDraft((d) => ({ ...d, min: e.target.value }))}
           onBlur={() => commit("min")}
@@ -193,8 +198,10 @@ function RangeFilter({ min, max, bounds, onCommit }: RangeFilterProps) {
       <label>
         To
         <input
-          type="number"
+          type={isDate ? "date" : "number"}
           value={draft.max}
+          min={isDate && bounds.min !== null ? String(bounds.min) : undefined}
+          max={isDate && bounds.max !== null ? String(bounds.max) : undefined}
           placeholder={bounds.max === null ? "" : String(bounds.max)}
           onChange={(e) => setDraft((d) => ({ ...d, max: e.target.value }))}
           onBlur={() => commit("max")}

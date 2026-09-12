@@ -897,3 +897,47 @@ tbody tr:hover {
   color: #24292f;
   box-sizing: border-box;
 }
+
+/* Samplings ---------------------------------------------------------------- */
+
+/* 29 columns: locality context first, then the sampling itself. */
+.samplings-table {
+  min-width: 3600px;
+}
+
+.col-sampling_id,
+.col-eur_grid,
+.col-eur_subgrid,
+.col-masl,
+.col-plot_size,
+.col-volume,
+.col-sample_size,
+.col-distance,
+.col-ph,
+.col-releve {
+  width: 90px;
+}
+.col-site_name,
+.col-habitat,
+.col-collector,
+.col-sampling_method,
+.col-event {
+  width: 150px;
+}
+.col-state_region {
+  width: 170px;
+}
+.col-sampling_date,
+.col-conductivity,
+.col-data_type,
+.col-research_type {
+  width: 120px;
+}
+.col-locality_note {
+  width: 180px;
+}
+
+/* The sampling note takes what is left. */
+.col-sampling_note {
+  width: auto;
+}

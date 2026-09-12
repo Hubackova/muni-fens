@@ -124,7 +124,20 @@ export type RangeFilterMeta = FilterMetaBase & {
   max: number | null;
 };
 
-export type FilterMeta = ValueFilterMeta | RangeFilterMeta;
+// Same two params, but the bounds are dates - the backend widens each value
+// by its date_precision when matching.
+export type DateRangeFilterMeta = FilterMetaBase & {
+  type: "date_range";
+  min_param: string;
+  max_param: string;
+  min: string | null;
+  max: string | null;
+};
+
+export type FilterMeta =
+  | ValueFilterMeta
+  | RangeFilterMeta
+  | DateRangeFilterMeta;
 
 export type FiltersResponse = { filters: FilterMeta[] };
 
