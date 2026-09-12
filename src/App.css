@@ -38,6 +38,48 @@ h1 {
   color: #b00020;
 }
 
+/* One consistent box for every error in the app. */
+.error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #f3c2cc;
+  border-left: 3px solid #b00020;
+  border-radius: 6px;
+  background: #fdecef;
+  color: #7d1128;
+  text-align: left;
+}
+
+.error-banner p {
+  margin: 0;
+  flex: 1;
+}
+
+.error-banner-icon {
+  flex: none;
+  margin-top: 0.1rem;
+  color: #b00020;
+}
+
+.error-banner-close {
+  flex: none;
+  display: inline-flex;
+  border: 0;
+  background: none;
+  padding: 0.1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #7d1128;
+}
+
+.error-banner-close:hover {
+  background: rgba(176, 0, 32, 0.12);
+}
+
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -800,4 +842,58 @@ tbody tr:hover {
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   margin: 0 0 0.75rem;
+}
+
+/* ECO "Add new" page ------------------------------------------------------ */
+
+.form-section {
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #fff;
+  padding: 1rem 1.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+/* Marks the field the backend named in a constraint violation. */
+.input-error {
+  border-color: #b00020 !important;
+  background: #fdecef;
+}
+
+/* Read-only reminder of which locality a sampling is being added to. */
+.locality-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #f6f8fa;
+  font-size: 0.85rem;
+}
+
+.locality-summary dt {
+  color: #57606a;
+  font-size: 0.75rem;
+}
+
+.locality-summary dd {
+  margin: 0;
+}
+
+.date-preview {
+  display: block;
+  height: 38px;
+  padding: 0.4rem 0.5rem;
+  border: 1px dashed #d0d7de;
+  border-radius: 6px;
+  background: #f6f8fa;
+  color: #24292f;
+  box-sizing: border-box;
 }

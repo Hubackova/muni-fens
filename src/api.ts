@@ -11,29 +11,73 @@ type ApiErrorDetail = {
   constraint?: string | null;
 };
 
-// Turn an unsuccessful Response into a human-readable message.
-export async function readApiError(response: Response): Promise<string> {
+// Errors carry the backend's own code and, for constraint violations, the
+// field that caused them - forms use it to highlight the offending input.
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly field?: string;
+  // "highlight_field" | "toast" - how the backend wants the error presented.
+  readonly uiAction?: string;
+
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    field?: string | null,
+    uiAction?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.field = field ?? undefined;
+    this.uiAction = uiAction;
+  }
+}
+
+// True when the backend pinned the error to an input we can highlight.
+export function isFieldError(
+  err: unknown,
+): err is ApiError & { field: string } {
+  return err instanceof ApiError && !!err.field;
+}
+
+// Turn an unsuccessful Response into a readable error carrying the metadata.
+export async function readApiErrorDetail(response: Response): Promise<ApiError> {
   try {
     const body = await response.json();
     const detail = body?.detail;
 
     const error = detail?.error as ApiErrorDetail | undefined;
     if (error?.message) {
-      return error.code ? `${error.message} [${error.code}]` : error.message;
+      // The message is written for users; the code travels separately.
+      return new ApiError(
+        error.message,
+        response.status,
+        error.code,
+        error.field,
+        error.ui_action,
+      );
     }
 
     if (Array.isArray(detail) && detail[0]?.msg) {
-      return detail[0].msg as string;
+      return new ApiError(detail[0].msg as string, response.status);
     }
 
     if (typeof detail === "string") {
-      return detail;
+      return new ApiError(detail, response.status);
     }
   } catch {
-    // body is not JSON – fall back to the status below
+    // body is not JSON - fall back to the status below
   }
 
-  return `HTTP ${response.status}`;
+  return new ApiError(`HTTP ${response.status}`, response.status);
+}
+
+// Turn an unsuccessful Response into a human-readable message.
+export async function readApiError(response: Response): Promise<string> {
+  return (await readApiErrorDetail(response)).message;
 }
 
 // Small wrapper around fetch that throws a readable error on non-2xx responses
@@ -44,7 +88,7 @@ export async function fetchJson<T>(
 ): Promise<T> {
   const response = await fetch(input, init);
   if (!response.ok) {
-    throw new Error(await readApiError(response));
+    throw await readApiErrorDetail(response);
   }
   return (await response.json()) as T;
 }
@@ -117,6 +161,6 @@ export async function sendJson(
         }),
   });
   if (!response.ok) {
-    throw new Error(await readApiError(response));
+    throw await readApiErrorDetail(response);
   }
 }

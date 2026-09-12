@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { API_ROOT, errorMessage, sendJson } from "../api";
 import type { Locality } from "./types";
+import ErrorBanner from "../ErrorBanner";
 
 type Props = {
   locality: Locality;
@@ -48,7 +49,7 @@ function PruneDialog({ locality, onClose, onDone }: Props) {
           </button>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
         <p className="danger-note">
           This deletes <strong>{locality.name}</strong> (#{locality.id}) from

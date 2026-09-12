@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_ROOT, errorMessage, fetchJson } from "../api";
 import type { SpeciesHistory } from "./types";
+import ErrorBanner from "../ErrorBanner";
 
 type Props = {
   speciesId: number;
@@ -56,7 +57,7 @@ function HistoryDialog({ speciesId, speciesName, onClose }: Props) {
           </button>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        <ErrorBanner message={error} />
 
         {isLoading ? (
           <p>Loading history...</p>

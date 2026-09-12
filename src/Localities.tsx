@@ -6,6 +6,7 @@ import {
   fetchJson,
   sendJson,
   filterParams,
+  isFieldError,
   isValueFilter,
   type FilterMeta,
   type FiltersResponse,
@@ -26,6 +27,7 @@ import {
   type LocalityListResponse,
 } from "./localities/types";
 import type { SortOrder } from "./species/types";
+import ErrorBanner from "./ErrorBanner";
 
 const API_BASE = `${API_ROOT}/${LOCALITY_ENTITY}`;
 const PAGE_SIZE = 50;
@@ -77,6 +79,8 @@ function Localities() {
     null,
   );
   const [isSaving, setIsSaving] = useState(false);
+  // Which cell the current error points at, so it can be outlined.
+  const [errorField, setErrorField] = useState<string | null>(null);
 
   const [pruneFor, setPruneFor] = useState<Locality | null>(null);
   const [isMergeOpen, setIsMergeOpen] = useState(false);
@@ -259,9 +263,13 @@ function Localities() {
     setEditCountry(null);
   };
 
+  type PatchProblem = { field: string; message: string };
+
   // Build a PATCH body holding only the fields the user actually changed.
   // An emptied nullable field is sent as null; a non-nullable one is an error.
-  const buildPatch = (row: Locality): Record<string, unknown> | string => {
+  const buildPatch = (
+    row: Locality,
+  ): Record<string, unknown> | PatchProblem => {
     const patch: Record<string, unknown> = {};
 
     for (const col of LOCALITY_EDITABLE) {
@@ -271,7 +279,12 @@ function Localities() {
       const raw = (editValues[col.key] ?? "").trim();
 
       if (!raw) {
-        if (col.nullable === false) return `${col.label} must not be empty.`;
+        if (col.nullable === false) {
+          return {
+            field: col.key,
+            message: `${col.label} must not be empty.`,
+          };
+        }
         if (original !== null) patch[col.key] = null;
         continue;
       }
@@ -283,12 +296,20 @@ function Localities() {
           col.input === "integer"
             ? Number.parseInt(raw, 10)
             : Number(raw.replace(",", "."));
-        if (Number.isNaN(num)) return `${col.label} must be a number.`;
+        if (Number.isNaN(num)) {
+          return { field: col.key, message: `${col.label} must be a number.` };
+        }
         if (col.key === "latitude" && (num < -90 || num > 90)) {
-          return "Latitude must be between -90 and 90.";
+          return {
+            field: "latitude",
+            message: "Latitude must be between -90 and 90.",
+          };
         }
         if (col.key === "longitude" && (num < -180 || num > 180)) {
-          return "Longitude must be between -180 and 180.";
+          return {
+            field: "longitude",
+            message: "Longitude must be between -180 and 180.",
+          };
         }
         if (num !== original) patch[col.key] = num;
         continue;
@@ -305,8 +326,9 @@ function Localities() {
 
   const saveEditing = async (row: Locality) => {
     const patch = buildPatch(row);
-    if (typeof patch === "string") {
-      setError(patch);
+    if ("message" in patch && "field" in patch) {
+      setError(patch.message as string);
+      setErrorField(patch.field as string);
       return;
     }
     if (Object.keys(patch).length === 0) {
@@ -319,9 +341,11 @@ function Localities() {
       await sendJson(`${API_BASE}/${row.id}`, "PATCH", patch);
       cancelEditing();
       setError(null);
+      setErrorField(null);
       await reloadAll();
     } catch (err) {
       setError(`Failed to save changes. (${errorMessage(err)})`);
+      setErrorField(isFieldError(err) ? err.field : null);
     } finally {
       setIsSaving(false);
     }
@@ -347,6 +371,7 @@ function Localities() {
           getHint={(c) => c.alpha3}
           selected={editCountry}
           onSelect={setEditCountry}
+          invalid={errorField === "country"}
           placeholder={row.country}
         />
       );
@@ -356,6 +381,7 @@ function Localities() {
       const options = col.lookup ? (lookups[col.lookup] ?? []) : [];
       return (
         <select
+          className={errorField === col.key ? "input-error" : undefined}
           value={editValues[col.key] ?? ""}
           onClick={(e) => e.stopPropagation()}
           onChange={(e) =>
@@ -377,6 +403,7 @@ function Localities() {
     const isDecimal = col.input === "decimal";
     return (
       <input
+        className={errorField === col.key ? "input-error" : undefined}
         type={col.input === "integer" ? "number" : "text"}
         inputMode={isDecimal ? "decimal" : undefined}
         value={editValues[col.key] ?? ""}
@@ -398,7 +425,7 @@ function Localities() {
   return (
     <section className="page" onClick={closeFilter}>
       {isInitialLoading && <p>Loading...</p>}
-      {error && <p className="error">{error}</p>}
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
       {notice && <p className="notice">{notice}</p>}
 
       <div className="toolbar">

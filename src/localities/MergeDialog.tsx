@@ -7,6 +7,7 @@ import {
 } from "../api";
 import Autocomplete from "../Autocomplete";
 import type { Locality, LocalitySearchResult } from "./types";
+import ErrorBanner from "../ErrorBanner";
 
 type Props = {
   onClose: () => void;
@@ -152,7 +153,7 @@ function MergeDialog({ onClose, onDone }: Props) {
           </button>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
         <div className="form-row">
           <label className="grow">
@@ -182,9 +183,7 @@ function MergeDialog({ onClose, onDone }: Props) {
         </div>
 
         {sameLocality && (
-          <p className="error">
-            A and B must be two different localities.
-          </p>
+          <ErrorBanner message="A and B must be two different localities." />
         )}
 
         {ready && detailA && detailB && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
+import ErrorBanner from "./ErrorBanner";
 
 type Country = {
   id: number;
@@ -316,7 +317,7 @@ function Countries() {
   return (
     <section className="page">
       {isInitialLoading && <p>Loading...</p>}
-      {error && <p className="error">{error}</p>}
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
       {!error && (
         <div>
@@ -490,7 +491,7 @@ function Countries() {
       {isAddOpen && (
         <Modal title="Add country" onClose={() => setIsAddOpen(false)}>
           <form className="modal-form" onSubmit={handleCreate}>
-            {formError && <p className="error">{formError}</p>}
+            <ErrorBanner message={formError} onDismiss={() => setFormError(null)} />
             <div className="form-row">
           <label>
             Alpha2

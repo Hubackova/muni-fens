@@ -3,10 +3,12 @@ import {
   API_ROOT,
   errorMessage,
   fetchJson,
+  isFieldError,
   type LookupsResponse,
 } from "../api";
 import SpeciesAutocomplete from "./SpeciesAutocomplete";
 import type { SpeciesSearchResult } from "./types";
+import ErrorBanner from "../ErrorBanner";
 
 type Props = {
   lookups: LookupsResponse;
@@ -32,6 +34,14 @@ function SynonymForm({ lookups, onCreated }: Props) {
   const [previous, setPrevious] = useState<SpeciesSearchResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<string | null>(null);
+
+  const fail = (field: string | null, message: string) => {
+    setError(message);
+    setErrorField(field);
+  };
+  const fieldClass = (field: string) =>
+    errorField === field ? "input-error" : undefined;
 
   const typeOptions = lookups[TYPE_LOOKUP] ?? [];
 
@@ -41,16 +51,11 @@ function SynonymForm({ lookups, onCreated }: Props) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setErrorField(null);
 
     const species = form.species.trim();
-    if (!species) {
-      setError("Species name is required.");
-      return;
-    }
-    if (!form.type) {
-      setError("Type is required.");
-      return;
-    }
+    if (!species) return fail("species", "Species name is required.");
+    if (!form.type) return fail("type", "Type is required.");
 
     try {
       setIsSaving(true);
@@ -72,6 +77,7 @@ function SynonymForm({ lookups, onCreated }: Props) {
       onCreated();
     } catch (err) {
       setError(errorMessage(err));
+      setErrorField(isFieldError(err) ? err.field : null);
     } finally {
       setIsSaving(false);
     }
@@ -79,12 +85,13 @@ function SynonymForm({ lookups, onCreated }: Props) {
 
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
-      {error && <p className="error">{error}</p>}
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
       <div className="form-row">
         <label>
           Species name *
           <input
+            className={fieldClass("species")}
             value={form.species}
             onChange={(e) => update({ species: e.target.value })}
           />
@@ -93,6 +100,7 @@ function SynonymForm({ lookups, onCreated }: Props) {
         <label>
           Type *
           <select
+            className={fieldClass("type")}
             value={form.type}
             onChange={(e) => update({ type: e.target.value })}
           >

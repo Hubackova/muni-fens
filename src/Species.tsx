@@ -6,6 +6,7 @@ import {
   fetchJson,
   sendJson,
   filterParams,
+  isFieldError,
   isValueFilter,
   type FilterMeta,
   type FiltersResponse,
@@ -26,6 +27,7 @@ import {
   type SpeciesListResponse,
   type SortOrder,
 } from "./species/types";
+import ErrorBanner from "./ErrorBanner";
 
 const API_BASE = `${API_ROOT}/${SPECIES_ENTITY}`;
 const PAGE_SIZE = 50;
@@ -80,6 +82,8 @@ function Species() {
     note: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  // Which cell the current error points at, so it can be outlined.
+  const [errorField, setErrorField] = useState<string | null>(null);
 
   // Dialogs
   const [cleanupField, setCleanupField] = useState<SpeciesColumn | null>(null);
@@ -250,6 +254,7 @@ function Species() {
     const species = editValues.species.trim();
     if (!species) {
       setError("Species name must not be empty.");
+      setErrorField("species_name");
       return;
     }
     try {
@@ -261,9 +266,12 @@ function Species() {
         type: editValues.species_group || null,
       });
       setEditingId(null);
+      setError(null);
+      setErrorField(null);
       await reloadAll();
     } catch (err) {
       setError(`Failed to save changes. (${errorMessage(err)})`);
+      setErrorField(isFieldError(err) ? err.field : null);
     } finally {
       setIsSaving(false);
     }
@@ -297,6 +305,7 @@ function Species() {
     if (isEditing && col.key === "species_name") {
       return (
         <input
+          className={errorField === "species_name" ? "input-error" : undefined}
           value={editValues.species}
           onChange={(e) =>
             setEditValues((v) => ({ ...v, species: e.target.value }))
@@ -309,6 +318,7 @@ function Species() {
     if (isEditing && col.key === "abbreviation") {
       return (
         <input
+          className={errorField === "abbreviation" ? "input-error" : undefined}
           value={editValues.abbreviation}
           onChange={(e) =>
             setEditValues((v) => ({ ...v, abbreviation: e.target.value }))
@@ -361,7 +371,7 @@ function Species() {
   return (
     <section className="page" onClick={closeFilter}>
       {isInitialLoading && <p>Loading...</p>}
-      {error && <p className="error">{error}</p>}
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
       <div className="toolbar">
         <input

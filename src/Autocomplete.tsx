@@ -15,6 +15,8 @@ type Props<T> = {
   onSelect: (item: T | null) => void;
   // Shown while nothing is picked - typically the value already stored.
   placeholder?: string;
+  // Outlines the control when it is the field a validation error points at.
+  invalid?: boolean;
 };
 
 // Type-ahead over one of the /*/search endpoints. The result list is rendered
@@ -27,6 +29,7 @@ function Autocomplete<T>({
   selected,
   onSelect,
   placeholder,
+  invalid,
 }: Props<T>) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<T[]>([]);
@@ -80,7 +83,7 @@ function Autocomplete<T>({
 
   if (selected) {
     return (
-      <div className="autocomplete-chip">
+      <div className={invalid ? "autocomplete-chip input-error" : "autocomplete-chip"}>
         <span>
           {getLabel(selected)}
           {getHint && <small> {getHint(selected)}</small>}
@@ -108,7 +111,7 @@ function Autocomplete<T>({
     <>
       <input
         ref={inputRef}
-        className="autocomplete-input"
+        className={invalid ? "autocomplete-input input-error" : "autocomplete-input"}
         value={query}
         placeholder={placeholder ?? "Search..."}
         onClick={(e) => e.stopPropagation()}

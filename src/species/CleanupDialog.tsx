@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_ROOT, errorMessage, fetchJson } from "../api";
+import ErrorBanner from "../ErrorBanner";
 
 type Props = {
   entity: string;
@@ -97,7 +98,7 @@ function CleanupDialog({ entity, field, label, onClose, onDone }: Props) {
           </button>
         </div>
 
-        {error && <p className="error">{error}</p>}
+        <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
         {isLoading ? (
           <p>Loading values...</p>
