@@ -16,6 +16,7 @@ import Autocomplete from "./Autocomplete";
 import ErrorBanner from "./ErrorBanner";
 import FilterDropdown from "./FilterDropdown";
 import type { LocalitySearchResult } from "./localities/types";
+import SamplingDetail from "./observations/SamplingDetail";
 import {
   SAMPLING_COLUMNS,
   SAMPLING_DEFAULT_SORT,
@@ -63,6 +64,8 @@ function Samplings() {
     null,
   );
   const [isSaving, setIsSaving] = useState(false);
+  // Opening a sampling shows its observations instead of the table.
+  const [openSampling, setOpenSampling] = useState<number | null>(null);
 
   const offset = (page - 1) * PAGE_SIZE;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -327,6 +330,22 @@ function Samplings() {
     col: SamplingColumn,
     isEditing: boolean,
   ) => {
+    if (col.key === "sampling_id" && !isEditing) {
+      return (
+        <button
+          type="button"
+          className="link-btn"
+          title="Species at this sampling"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenSampling(row.sampling_id);
+          }}
+        >
+          {row.sampling_id}
+        </button>
+      );
+    }
+
     if (!isEditing || !col.input) return formatValue(row, col);
 
     if (col.input === "locality") {
@@ -387,6 +406,19 @@ function Samplings() {
   const openMeta = openColumn?.metaField
     ? filterMetaByField.get(openColumn.metaField)
     : undefined;
+
+  if (openSampling !== null) {
+    return (
+      <SamplingDetail
+        samplingId={openSampling}
+        lookups={lookups}
+        onBack={() => {
+          setOpenSampling(null);
+          void reloadAll();
+        }}
+      />
+    );
+  }
 
   return (
     <section className="page" onClick={closeFilter}>
