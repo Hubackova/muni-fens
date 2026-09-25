@@ -43,7 +43,7 @@ const CHOICES: { key: ChoiceKey; label: string; show: (l: Locality) => string }[
       label: "Coordinates",
       show: (l) => `${l.latitude}, ${l.longitude}`,
     },
-    { key: "country", label: "Country", show: (l) => l.country },
+    { key: "country", label: "Country", show: (l) => l.name_en },
     { key: "settlement", label: "Settlement", show: (l) => l.settlement ?? "-" },
     { key: "state", label: "State/Province/Region", show: (l) => l.state ?? "-" },
     { key: "masl", label: "m a.s.l.", show: (l) => String(l.masl ?? "-") },

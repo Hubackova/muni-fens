@@ -14,6 +14,7 @@ import type { SpeciesSearchResult } from "../species/types";
 import { formatSamplingDate, type Sampling } from "../samplings/types";
 import ImportDialog from "./ImportDialog";
 import {
+  SPECIFICATION_LOOKUP,
   countsPayload,
   emptyCounts,
   totalIndividuals,
@@ -83,6 +84,8 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [samplingId]);
+
+  const specificationOptions = lookups[SPECIFICATION_LOOKUP] ?? [];
 
   const fail = (field: string | null, message: string) => {
     setError(message);
@@ -177,6 +180,26 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
     }
   };
 
+  // Specification is an enum, so it is picked rather than typed.
+  const specificationSelect = (
+    value: CountsDraft,
+    setValue: (next: CountsDraft) => void,
+  ) => (
+    <select
+      className={errorField === "specification" ? "input-error" : undefined}
+      value={value.specification}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => setValue({ ...value, specification: e.target.value })}
+    >
+      <option value="">-</option>
+      {specificationOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+
   const countInput = (
     value: CountsDraft,
     setValue: (next: CountsDraft) => void,
@@ -221,7 +244,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
             </div>
             <div>
               <dt>Country</dt>
-              <dd>{sampling.country}</dd>
+              <dd>{sampling.name_en}</dd>
             </div>
             <div>
               <dt>Settlement</dt>
@@ -308,12 +331,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
                       </td>
                       <td>
                         {isEditing
-                          ? countInput(
-                              editDraft,
-                              setEditDraft,
-                              "specification",
-                              "text",
-                            )
+                          ? specificationSelect(editDraft, setEditDraft)
                           : (row.specification ?? "-")}
                       </td>
                       <td>
@@ -421,7 +439,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
                 </label>
                 <label>
                   Specification
-                  {countInput(draft, setDraft, "specification", "text")}
+                  {specificationSelect(draft, setDraft)}
                 </label>
               </div>
 

@@ -16,20 +16,14 @@ export type Observation = {
   note: string | null;
 };
 
-// One row rejected by POST .../observations/import. A single CSV row can
-// produce several of these.
-export type ImportRowError = {
-  row: number;
-  field: string;
-  code: string;
-  message: string;
-};
-
-export type ImportResult =
-  | { status: "created"; inserted: number }
-  | { status: "validation_failed"; errors: ImportRowError[] };
+// POST .../observations/import on success; a rejected file comes back as an
+// ApiError carrying the offending rows.
+export type ImportResponse = { status: string; inserted: number };
 
 export const SPECIFICATION_MAX = 50;
+
+// Specification is an enum; its values live in /meta/lookups.
+export const SPECIFICATION_LOOKUP = "mol_observation_specifications";
 
 // The header the import endpoint expects; the optional columns may be omitted.
 export const CSV_HEADER =

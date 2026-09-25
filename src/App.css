@@ -717,8 +717,9 @@ tbody tr:hover {
 .col-current_habitat {
   width: 130px;
 }
+/* Same long header as in the samplings table. */
 .col-state {
-  width: 150px;
+  width: 220px;
 }
 .col-masl,
 .col-eur_grid,
@@ -902,7 +903,7 @@ tbody tr:hover {
 
 /* 29 columns: locality context first, then the sampling itself. */
 .samplings-table {
-  min-width: 3600px;
+  min-width: 3650px;
 }
 
 .col-sampling_id,
@@ -924,8 +925,9 @@ tbody tr:hover {
 .col-event {
   width: 150px;
 }
+/* The "State/Province/Region" header needs room next to its two buttons. */
 .col-state_region {
-  width: 170px;
+  width: 220px;
 }
 .col-sampling_date,
 .col-conductivity,

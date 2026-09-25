@@ -226,15 +226,13 @@ function Samplings() {
 
   type PatchProblem = { field: string; message: string };
 
-  // Only the fields the user actually changed travel to the API, under the
-  // names SamplingUpdate expects (they differ from the response for three).
+  // Only the fields the user actually changed travel to the API.
   const buildPatch = (row: Sampling): Record<string, unknown> | PatchProblem => {
     const patch: Record<string, unknown> = {};
 
     for (const col of SAMPLING_EDITABLE) {
       if (col.input === "locality") continue;
 
-      const target = col.patchKey ?? col.key;
       const original = row[col.key];
       const raw = (editValues[col.key] ?? "").trim();
 
@@ -245,7 +243,7 @@ function Samplings() {
             message: `${col.label} must not be empty.`,
           };
         }
-        if (original !== null) patch[target] = null;
+        if (original !== null) patch[col.key] = null;
         continue;
       }
 
@@ -257,14 +255,16 @@ function Samplings() {
         if (Number.isNaN(num)) {
           return { field: col.key, message: `${col.label} must be a number.` };
         }
-        if (num !== original) patch[target] = num;
+        if (num !== original) patch[col.key] = num;
         continue;
       }
 
-      if (raw !== original) patch[target] = raw;
+      if (raw !== original) patch[col.key] = raw;
     }
 
-    if (editLocality) patch.locality_id = editLocality.id;
+    if (editLocality && editLocality.id !== row.locality_id) {
+      patch.locality_id = editLocality.id;
+    }
     return patch;
   };
 
@@ -321,6 +321,8 @@ function Samplings() {
 
   const formatValue = (row: Sampling, col: SamplingColumn) => {
     if (col.key === "sampling_date") return formatSamplingDate(row);
+    // The row stores alpha3; the readable name comes alongside it.
+    if (col.key === "country") return row.name_en;
     const value = row[col.key];
     return value === null || value === "" ? "-" : String(value);
   };
@@ -403,8 +405,8 @@ function Samplings() {
   const openColumn = openFilter
     ? SAMPLING_COLUMNS.find((c) => c.key === openFilter)
     : undefined;
-  const openMeta = openColumn?.metaField
-    ? filterMetaByField.get(openColumn.metaField)
+  const openMeta = openColumn
+    ? filterMetaByField.get(openColumn.key)
     : undefined;
 
   if (openSampling !== null) {
@@ -442,9 +444,7 @@ function Samplings() {
               <thead>
                 <tr>
                   {SAMPLING_COLUMNS.map((col) => {
-                    const meta = col.metaField
-                      ? filterMetaByField.get(col.metaField)
-                      : undefined;
+                    const meta = filterMetaByField.get(col.key);
                     const selectedCount = meta
                       ? filterParams(meta).filter((p) => filters[p]?.length)
                           .length
@@ -455,14 +455,14 @@ function Samplings() {
                           <button
                             type="button"
                             className="th-sort"
-                            disabled={!col.sortKey}
+                            disabled={!col.sortable}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (col.sortKey) handleSort(col.sortKey);
+                              if (col.sortable) handleSort(col.key);
                             }}
                           >
                             {col.label}
-                            {sortBy === col.sortKey &&
+                            {sortBy === col.key &&
                               (sortOrder === "asc" ? (
                                 <ArrowUp size={13} className="sort-indicator" />
                               ) : (

@@ -2,6 +2,14 @@
 
 export const API_ROOT = "/api";
 
+// One rejected row of a CSV import; several can share a row number.
+export type ApiErrorRow = {
+  row: number;
+  field: string;
+  code: string;
+  message: string;
+};
+
 type ApiErrorDetail = {
   code?: string;
   message?: string;
@@ -9,6 +17,7 @@ type ApiErrorDetail = {
   ui_action?: string;
   field?: string | null;
   constraint?: string | null;
+  rows?: ApiErrorRow[];
 };
 
 // Errors carry the backend's own code and, for constraint violations, the
@@ -19,6 +28,8 @@ export class ApiError extends Error {
   readonly field?: string;
   // "highlight_field" | "toast" - how the backend wants the error presented.
   readonly uiAction?: string;
+  // Present when a bulk operation reports problems row by row.
+  readonly rows?: ApiErrorRow[];
 
   constructor(
     message: string,
@@ -26,6 +37,7 @@ export class ApiError extends Error {
     code?: string,
     field?: string | null,
     uiAction?: string,
+    rows?: ApiErrorRow[],
   ) {
     super(message);
     this.name = "ApiError";
@@ -33,6 +45,7 @@ export class ApiError extends Error {
     this.code = code;
     this.field = field ?? undefined;
     this.uiAction = uiAction;
+    this.rows = rows;
   }
 }
 
@@ -58,6 +71,7 @@ export async function readApiErrorDetail(response: Response): Promise<ApiError> 
         error.code,
         error.field,
         error.ui_action,
+        error.rows,
       );
     }
 

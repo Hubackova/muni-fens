@@ -37,7 +37,11 @@ function LocalityForm({ lookups }: Props) {
   const [form, setForm] = useState(emptyForm);
   // Country is chosen by name but sent as alpha3.
   const [country, setCountry] = useState<CountrySearchResult | null>(null);
-  const [templateCountry, setTemplateCountry] = useState<string | null>(null);
+  // The template's country: alpha3 goes to the API, the name to the picker.
+  const [templateCountry, setTemplateCountry] = useState<{
+    alpha3: string;
+    name: string;
+  } | null>(null);
   const [template, setTemplate] = useState<LocalitySearchResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +62,7 @@ function LocalityForm({ lookups }: Props) {
     setForm((f) => ({ ...f, ...patch }));
 
   // alpha3 actually sent: a freshly picked country wins over the template's.
-  const countryCode = country?.alpha3 ?? templateCountry;
+  const countryCode = country?.alpha3 ?? templateCountry?.alpha3 ?? null;
 
   // Copy an existing locality into the form. Site ID and Field code are left
   // empty on purpose - they are UNIQUE, so copying them guarantees a 409.
@@ -84,7 +88,7 @@ function LocalityForm({ lookups }: Props) {
         note: detail.note ?? "",
       });
       setCountry(null);
-      setTemplateCountry(detail.country);
+      setTemplateCountry({ alpha3: detail.country, name: detail.name_en });
     } catch (err) {
       setError(`Failed to load the template locality. (${errorMessage(err)})`);
     }
@@ -243,7 +247,7 @@ function LocalityForm({ lookups }: Props) {
             selected={country}
             onSelect={setCountry}
             invalid={errorField === "country"}
-            placeholder={templateCountry ?? "Search a country..."}
+            placeholder={templateCountry?.name ?? "Search a country..."}
           />
         </label>
       </div>

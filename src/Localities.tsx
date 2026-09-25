@@ -355,6 +355,8 @@ function Localities() {
 
   const formatValue = (row: Locality, col: LocalityColumn) => {
     if (col.key === "deleted") return row.deleted ? "yes" : "no";
+    // The row stores alpha3; the readable name comes alongside it.
+    if (col.key === "country") return row.name_en;
     const value = row[col.key];
     return value === null || value === "" ? "-" : String(value);
   };
@@ -372,7 +374,7 @@ function Localities() {
           selected={editCountry}
           onSelect={setEditCountry}
           invalid={errorField === "country"}
-          placeholder={row.country}
+          placeholder={row.name_en}
         />
       );
     }

@@ -1,7 +1,13 @@
 import { useState } from "react";
-import { API_ROOT, errorMessage, readApiErrorDetail } from "../api";
+import {
+  API_ROOT,
+  ApiError,
+  errorMessage,
+  readApiErrorDetail,
+  type ApiErrorRow,
+} from "../api";
 import ErrorBanner from "../ErrorBanner";
-import { CSV_HEADER, type ImportResult, type ImportRowError } from "./types";
+import { CSV_HEADER } from "./types";
 
 type Props = {
   samplingId: number;
@@ -15,7 +21,7 @@ function ImportDialog({ samplingId, onClose, onImported }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rowErrors, setRowErrors] = useState<ImportRowError[]>([]);
+  const [rowErrors, setRowErrors] = useState<ApiErrorRow[]>([]);
 
   const handleImport = async () => {
     if (!file) return;
@@ -32,32 +38,19 @@ function ImportDialog({ samplingId, onClose, onImported }: Props) {
         { method: "POST", body },
       );
 
-      // A rejected import answers 422 with a row-by-row report rather than the
-      // usual single-error envelope.
-      if (response.status === 422) {
-        const payload = (await response.json()) as
-          | ImportResult
-          | { detail?: unknown };
-        if (
-          payload &&
-          "status" in payload &&
-          payload.status === "validation_failed"
-        ) {
-          setRowErrors(payload.errors);
-          return;
-        }
-        setError("The CSV file was rejected.");
-        return;
-      }
-
       if (!response.ok) throw await readApiErrorDetail(response);
 
-      const result = (await response.json()) as ImportResult;
-      if (result.status === "created") {
-        onImported(result.inserted);
-        onClose();
-      }
+      // Any 2xx means the whole file went in; only the count matters.
+      const result = (await response.json()) as { inserted?: number };
+      onImported(result.inserted ?? 0);
+      onClose();
     } catch (err) {
+      // A file rejected row by row arrives in the usual error envelope, with
+      // the offending rows listed alongside the summary message.
+      if (err instanceof ApiError && err.rows?.length) {
+        setRowErrors(err.rows);
+        return;
+      }
       setError(errorMessage(err));
     } finally {
       setIsImporting(false);
@@ -99,6 +92,7 @@ function ImportDialog({ samplingId, onClose, onImported }: Props) {
               onChange={(e) => {
                 setFile(e.target.files?.[0] ?? null);
                 setRowErrors([]);
+                setError(null);
               }}
             />
           </label>

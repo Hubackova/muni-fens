@@ -3,9 +3,13 @@
 // GET /eco/samplings. The locality columns are joined in and read-only; only
 // the sampling's own fields can be edited.
 export type Sampling = {
+  // The locality this sampling belongs to; PATCH moves it by changing this.
+  locality_id: number;
   site_id: string | null;
   field_code: string | null;
+  // alpha3, with the readable country name alongside it.
   country: string;
+  name_en: string;
   site_name: string;
   latitude: number;
   longitude: number;
@@ -17,8 +21,9 @@ export type Sampling = {
   locality_note: string | null;
   sampling_id: number;
   sampling_date: string | null;
-  // Drives the date filter on the backend; never shown to the user.
-  date_precision: string | null;
+  // Drives the date filter on the backend; never shown to the user. Always
+  // present - an unknown date carries the precision "unknown".
+  date_precision: string;
   habitat: string;
   collector: string;
   plot_size: number | null;
@@ -47,114 +52,105 @@ type EditInput = "text" | "decimal" | "integer" | "lookup" | "locality";
 export type SamplingColumn = {
   key: keyof Sampling;
   label: string;
-  // sort_by / filter names follow the query params, which differ from the
-  // response field names for four columns (name, state, size, method).
-  sortKey?: string;
-  metaField?: string;
+  sortable: boolean;
   input?: EditInput;
-  // Key in the PATCH body when it differs from the response field.
-  patchKey?: string;
   nullable?: boolean;
   lookup?: string;
 };
 
+// The API uses the SamplingResponse field names everywhere - for sort_by, for
+// the filter metadata and in the PATCH body - so `key` is the only name needed.
 export const SAMPLING_COLUMNS: SamplingColumn[] = [
-  { key: "sampling_id", label: "Sampling ID", sortKey: "sampling_id", metaField: "sampling_id" },
-  { key: "site_id", label: "Site ID", sortKey: "site_id", metaField: "site_id" },
-  { key: "field_code", label: "Field code", sortKey: "field_code", metaField: "field_code" },
+  { key: "sampling_id", label: "Sampling ID", sortable: true },
+  { key: "site_id", label: "Site ID", sortable: true },
+  { key: "field_code", label: "Field code", sortable: true },
   // Editing this cell moves the sampling to another locality.
-  { key: "site_name", label: "Site name", sortKey: "name", metaField: "name", input: "locality" },
-  { key: "country", label: "Country", sortKey: "country", metaField: "country" },
-  { key: "state_region", label: "State/Province/Region", sortKey: "state", metaField: "state" },
-  { key: "settlement", label: "Settlement", sortKey: "settlement", metaField: "settlement" },
-  { key: "latitude", label: "Latitude", sortKey: "latitude", metaField: "latitude" },
-  { key: "longitude", label: "Longitude", sortKey: "longitude", metaField: "longitude" },
-  { key: "eur_grid", label: "Grid", sortKey: "eur_grid", metaField: "eur_grid" },
-  { key: "eur_subgrid", label: "Subgrid", sortKey: "eur_subgrid", metaField: "eur_subgrid" },
-  { key: "masl", label: "m a.s.l.", sortKey: "masl", metaField: "masl" },
-  { key: "locality_note", label: "Locality note" },
-  { key: "sampling_date", label: "Date", sortKey: "sampling_date", metaField: "sampling_date" },
-  { key: "habitat", label: "Habitat", input: "text", nullable: false },
+  { key: "site_name", label: "Site name", sortable: true, input: "locality" },
+  { key: "country", label: "Country", sortable: true },
+  { key: "state_region", label: "State/Province/Region", sortable: true },
+  { key: "settlement", label: "Settlement", sortable: true },
+  { key: "latitude", label: "Latitude", sortable: true },
+  { key: "longitude", label: "Longitude", sortable: true },
+  { key: "eur_grid", label: "Grid", sortable: true },
+  { key: "eur_subgrid", label: "Subgrid", sortable: true },
+  { key: "masl", label: "m a.s.l.", sortable: true },
+  { key: "locality_note", label: "Locality note", sortable: false },
+  { key: "sampling_date", label: "Date", sortable: true },
+  {
+    key: "habitat",
+    label: "Habitat",
+    sortable: false,
+    input: "text",
+    nullable: false,
+  },
   {
     key: "collector",
     label: "Collector",
-    sortKey: "collector",
-    metaField: "collector",
+    sortable: true,
     input: "text",
     nullable: false,
   },
   {
     key: "sampling_method",
     label: "Method",
-    sortKey: "method",
-    metaField: "method",
+    sortable: true,
     input: "lookup",
-    patchKey: "method",
     lookup: "mol_sampling_methods",
     nullable: false,
   },
   {
     key: "plot_size",
     label: "Plot size",
-    sortKey: "plot_size",
-    metaField: "plot_size",
+    sortable: true,
     input: "integer",
     nullable: true,
   },
   {
     key: "volume",
     label: "Volume",
-    sortKey: "volume",
-    metaField: "volume",
+    sortable: true,
     input: "integer",
     nullable: true,
   },
   {
     key: "sample_size",
     label: "Size",
-    sortKey: "size",
-    metaField: "size",
+    sortable: true,
     input: "integer",
-    patchKey: "size",
     nullable: true,
   },
   {
     key: "distance",
     label: "Distance",
-    sortKey: "distance",
-    metaField: "distance",
+    sortable: true,
     input: "integer",
     nullable: true,
   },
   {
     key: "ph",
     label: "pH",
-    sortKey: "ph",
-    metaField: "ph",
+    sortable: true,
     input: "decimal",
     nullable: true,
   },
   {
     key: "conductivity",
     label: "Conductivity",
-    sortKey: "conductivity",
-    metaField: "conductivity",
+    sortable: true,
     input: "decimal",
     nullable: true,
   },
   {
     key: "releve",
     label: "Relevé no.",
-    sortKey: "releve",
-    metaField: "releve",
+    sortable: true,
     input: "integer",
     nullable: true,
   },
   {
     key: "data_type",
     label: "Data type",
-    sortKey: "data_type",
-    metaField: "data_type",
+    sortable: true,
     input: "lookup",
     lookup: "mol_data_types",
     nullable: true,
@@ -162,19 +158,18 @@ export const SAMPLING_COLUMNS: SamplingColumn[] = [
   {
     key: "event",
     label: "PLA/event",
-    sortKey: "event",
-    metaField: "event",
+    sortable: true,
     input: "text",
     nullable: true,
   },
   {
     key: "sampling_note",
     label: "Sampling note",
+    sortable: false,
     input: "text",
-    patchKey: "note",
     nullable: true,
   },
-  { key: "research_type", label: "Research type", sortKey: "research_type", metaField: "research_type" },
+  { key: "research_type", label: "Research type", sortable: true },
 ];
 
 export const SAMPLING_EDITABLE = SAMPLING_COLUMNS.filter((c) => c.input);
@@ -183,9 +178,9 @@ export const SAMPLING_DEFAULT_SORT = "sampling_id";
 export const SAMPLING_ENTITY = "samplings";
 
 // sampling_date arrives as an ISO date; date_precision says how much of it is
-// real. The precision itself never reaches the user.
+// real, and is never shown as such - it only decides how much gets printed.
 export function formatSamplingDate(row: Sampling): string {
-  if (!row.sampling_date) return "-";
+  if (row.date_precision === "unknown" || !row.sampling_date) return "-";
   const [year, month, day] = row.sampling_date.split("-");
   if (row.date_precision === "year") return year;
   if (row.date_precision === "month") return `${month}-${year}`;

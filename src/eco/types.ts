@@ -25,17 +25,17 @@ export type SamplingCreate = {
   day: number | null;
   habitat: string;
   collector: string;
-  method: string;
+  sampling_method: string;
   data_type: string | null;
   plot_size: number | null;
   volume: number | null;
-  size: number | null;
+  sample_size: number | null;
   distance: number | null;
   ph: number | null;
   conductivity: number | null;
   releve: number | null;
   event: string | null;
-  note: string | null;
+  sampling_note: string | null;
 };
 
 export const SUBGRID_LOOKUP = "loc_eur_subgrid";

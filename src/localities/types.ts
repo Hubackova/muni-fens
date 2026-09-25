@@ -9,6 +9,8 @@ export type Locality = {
   longitude: number;
   // alpha3 everywhere: list, detail and PATCH all speak the country code.
   country: string;
+  // The country's English name, read-only, for display next to that code.
+  name_en: string;
   settlement: string | null;
   state: string | null;
   masl: number | null;
