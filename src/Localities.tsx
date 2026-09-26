@@ -40,7 +40,13 @@ type DeletedMode = "all" | "active" | "deleted";
 // converted back to the API types on save.
 type EditValues = Record<string, string>;
 
-function Localities() {
+type Props = {
+  // The ECO tab starts filtered to localities entered through ECO and can be
+  // switched to the full list; the shared tab always shows everything.
+  eco?: boolean;
+};
+
+function Localities({ eco = false }: Props) {
   const [rows, setRows] = useState<Locality[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -67,6 +73,8 @@ function Localities() {
   // Soft-deleted rows stay in a toolbar switch: its column is hidden by
   // default, so its header filter would be unreachable.
   const [deletedMode, setDeletedMode] = useState<DeletedMode>("active");
+  // ECO tab only: false widens the table to DNA localities as well.
+  const [onlyEco, setOnlyEco] = useState(true);
   // Set after a merge so the user can see where the records ended up.
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -128,6 +136,7 @@ function Localities() {
     if (deletedMode !== "all") {
       params.set("filter_deleted", deletedMode === "deleted" ? "1" : "0");
     }
+    if (eco && onlyEco) params.set("filter_entry_point", "ECO");
     return `${API_BASE}?${params.toString()}`;
   };
 
@@ -160,8 +169,10 @@ function Localities() {
         ),
         fetchJson<LookupsResponse>(`${API_ROOT}/meta/lookups`, opts),
       ]);
+      // Both are driven by controls above the table, so neither gets a
+      // column filter of its own.
       const nextFilters = (filtersRes.filters ?? []).filter(
-        (m) => m.field !== "deleted",
+        (m) => m.field !== "deleted" && !(eco && m.field === "entry_point"),
       );
       setFilterMeta(nextFilters);
       setLookups(lookupsRes ?? {});
@@ -194,7 +205,10 @@ function Localities() {
       await loadMeta(controller.signal);
     })();
     return () => controller.abort();
-  }, []);
+    // `eco` decides which filters are kept; it never changes for a mounted
+    // instance, but the metadata does depend on it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eco]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -210,6 +224,7 @@ function Localities() {
     search,
     filtersKey,
     deletedMode,
+    onlyEco,
   ]);
 
   // Debounce the free-text inputs, then reset to the first page.
@@ -458,6 +473,19 @@ function Localities() {
             <option value="deleted">Deleted only</option>
           </select>
         </label>
+
+        {eco && (
+          <button
+            type="button"
+            className="toolbar-toggle"
+            onClick={() => {
+              setOnlyEco((current) => !current);
+              setPage(1);
+            }}
+          >
+            {onlyEco ? "Show all localities" : "Show only ECO localities"}
+          </button>
+        )}
 
         <button
           type="button"

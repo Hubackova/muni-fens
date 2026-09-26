@@ -791,26 +791,40 @@ tbody tr:hover {
   font: inherit;
 }
 
+/* Radio in a column of its own, so the values start at the same x in every
+   row instead of drifting with the content. */
 .merge-option {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: start;
   cursor: pointer;
 }
 
+.merge-option input {
+  margin: 0.2rem 0 0;
+}
+
 .merge-option span {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 /* The merge comparison table wraps its values instead of clipping them. */
 .merge-table td,
 .merge-table th {
   white-space: normal;
+  vertical-align: top;
 }
 
+/* Fixed layout keeps the A and B columns the same width whatever is in them. */
 .merge-table {
-  table-layout: auto;
+  table-layout: fixed;
+  min-width: 0;
+}
+
+.merge-table th:first-child,
+.merge-table td:first-child {
+  width: 30%;
 }
 
 /* Range filter inside the column popover. */
@@ -974,4 +988,18 @@ tbody tr:hover {
   background: #f6f8fa;
   font-size: 0.8rem;
   overflow-x: auto;
+}
+
+/* Switches the ECO localities table between ECO-only and everything. */
+.toolbar-toggle {
+  border: 1px solid #d0d7de;
+  background: #fff;
+  padding: 0.45rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.toolbar-toggle:hover {
+  background: #f6f8fa;
 }
