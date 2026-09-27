@@ -3,6 +3,7 @@ import "./App.css";
 import AddNew from "./AddNew";
 import Countries from "./Countries";
 import Localities from "./Localities";
+import Observations from "./Observations";
 import Samplings from "./Samplings";
 import Species from "./Species";
 
@@ -12,6 +13,7 @@ type Tab =
   | "localities"
   | "localities-eco"
   | "samplings"
+  | "observations"
   | "add";
 
 function App() {
@@ -57,6 +59,13 @@ function App() {
         </button>
         <button
           type="button"
+          className={tab === "observations" ? "nav-active" : ""}
+          onClick={() => setTab("observations")}
+        >
+          Observations
+        </button>
+        <button
+          type="button"
           className={tab === "add" ? "nav-active" : ""}
           onClick={() => setTab("add")}
         >
@@ -68,6 +77,7 @@ function App() {
       {tab === "localities" && <Localities />}
       {tab === "localities-eco" && <Localities eco key="eco" />}
       {tab === "samplings" && <Samplings />}
+      {tab === "observations" && <Observations />}
       {tab === "add" && <AddNew />}
     </>
   );

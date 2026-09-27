@@ -1003,3 +1003,28 @@ tbody tr:hover {
 .toolbar-toggle:hover {
   background: #f6f8fa;
 }
+
+/* Observations table ------------------------------------------------------- */
+
+.observations-list {
+  min-width: 1500px;
+}
+
+.col-observation_id,
+.col-alive,
+.col-empty,
+.col-undefined,
+.col-all,
+.col-lot,
+.col-vouchers {
+  width: 90px;
+}
+
+.col-species_name,
+.col-specification {
+  width: 170px;
+}
+
+.col-research_type {
+  width: 120px;
+}

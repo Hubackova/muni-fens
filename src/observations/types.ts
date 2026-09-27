@@ -138,3 +138,80 @@ export function countsPayload(draft: CountsDraft) {
     note: draft.note.trim() || null,
   };
 }
+
+// GET /eco/observations - the standalone table of every observation.
+export type ObservationRow = {
+  observation_id: number;
+  site_id: string;
+  sampling_date: string | null;
+  // Needed to print the date at the right precision; never shown as such.
+  date_precision: string;
+  species_name: string;
+  specification: string | null;
+  alive: number | null;
+  empty: number | null;
+  undefined: number | null;
+  // Computed by the backend.
+  all: number;
+  lot: number | null;
+  vouchers: number | null;
+  note: string | null;
+  // The entry point the observation came in through; filtered as entry_point.
+  research_type: string;
+};
+
+export type ObservationListResponse = {
+  data: ObservationRow[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+// GET /eco/observations/duplicates - the same species twice in one sampling.
+export type ObservationDuplicate = {
+  site_name: string;
+  sampling_id: number;
+  sampling_date: string | null;
+  date_precision: string;
+  species_name: string;
+  specifications: string[];
+};
+
+type ObservationInput = "text" | "integer" | "specification";
+
+export type ObservationColumn = {
+  key: keyof ObservationRow;
+  label: string;
+  sortable: boolean;
+  input?: ObservationInput;
+};
+
+// The API uses the response field names for sort_by, for the filter metadata
+// and in the PATCH body alike, so `key` is the only name needed.
+export const OBSERVATION_COLUMNS: ObservationColumn[] = [
+  { key: "observation_id", label: "Observation ID", sortable: true },
+  { key: "site_id", label: "Site ID", sortable: true },
+  { key: "sampling_date", label: "Date", sortable: true },
+  // species_id is not in the response, so the species itself cannot be
+  // repointed from this table - that is done at the sampling.
+  { key: "species_name", label: "Species", sortable: true },
+  {
+    key: "specification",
+    label: "Specification",
+    sortable: true,
+    input: "specification",
+  },
+  { key: "alive", label: "Alive", sortable: true, input: "integer" },
+  { key: "empty", label: "Empty", sortable: true, input: "integer" },
+  { key: "undefined", label: "Undefined", sortable: true, input: "integer" },
+  { key: "all", label: "All", sortable: true },
+  { key: "lot", label: "Lot", sortable: true, input: "integer" },
+  { key: "vouchers", label: "Vouchers", sortable: true, input: "integer" },
+  { key: "note", label: "Note", sortable: false, input: "text" },
+  { key: "research_type", label: "Research type", sortable: true },
+];
+
+export const OBSERVATION_EDITABLE = OBSERVATION_COLUMNS.filter((c) => c.input);
+
+export const OBSERVATION_DEFAULT_SORT = "observation_id";
+export const OBSERVATION_ENTITY = "observations";

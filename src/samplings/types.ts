@@ -179,7 +179,10 @@ export const SAMPLING_ENTITY = "samplings";
 
 // sampling_date arrives as an ISO date; date_precision says how much of it is
 // real, and is never shown as such - it only decides how much gets printed.
-export function formatSamplingDate(row: Sampling): string {
+export function formatSamplingDate(row: {
+  sampling_date: string | null;
+  date_precision: string;
+}): string {
   if (row.date_precision === "unknown" || !row.sampling_date) return "-";
   const [year, month, day] = row.sampling_date.split("-");
   if (row.date_precision === "year") return year;
