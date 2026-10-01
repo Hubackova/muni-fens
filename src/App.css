@@ -1028,3 +1028,24 @@ tbody tr:hover {
 .col-research_type {
   width: 120px;
 }
+
+/* Sampling species --------------------------------------------------------- */
+
+/* 38 columns: the observation first, then its sampling and locality. */
+.sampling-species-table {
+  min-width: 4600px;
+}
+
+.col-sampling_id,
+.col-all_count,
+.col-lot_no_primary,
+.col-lot_no_secondary,
+.col-grid,
+.col-subgrid {
+  width: 90px;
+}
+
+.col-observation_note,
+.col-habitat {
+  width: 150px;
+}

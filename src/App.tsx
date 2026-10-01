@@ -4,6 +4,7 @@ import AddNew from "./AddNew";
 import Countries from "./Countries";
 import Localities from "./Localities";
 import Observations from "./Observations";
+import SamplingSpecies from "./SamplingSpecies";
 import Samplings from "./Samplings";
 import Species from "./Species";
 
@@ -14,6 +15,7 @@ type Tab =
   | "localities-eco"
   | "samplings"
   | "observations"
+  | "sampling-species"
   | "add";
 
 function App() {
@@ -66,6 +68,13 @@ function App() {
         </button>
         <button
           type="button"
+          className={tab === "sampling-species" ? "nav-active" : ""}
+          onClick={() => setTab("sampling-species")}
+        >
+          All data
+        </button>
+        <button
+          type="button"
           className={tab === "add" ? "nav-active" : ""}
           onClick={() => setTab("add")}
         >
@@ -78,6 +87,7 @@ function App() {
       {tab === "localities-eco" && <Localities eco key="eco" />}
       {tab === "samplings" && <Samplings />}
       {tab === "observations" && <Observations />}
+      {tab === "sampling-species" && <SamplingSpecies />}
       {tab === "add" && <AddNew />}
     </>
   );
