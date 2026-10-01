@@ -1,6 +1,6 @@
 // GET /eco/sampling-species - every observation with its sampling and locality
-// context flattened into one row. Only the observation's own fields are
-// editable; the rest belongs to the Samplings and Localities tabs.
+// context flattened into one row. Read-only: the row spans three tables, so
+// each field is edited in the tab that owns it.
 
 export type SamplingSpeciesRow = {
   // Technical id used for PATCH; not shown.
@@ -38,7 +38,7 @@ export type SamplingSpeciesRow = {
   sampling_method: string | null;
   ph: number | null;
   conductivity: number | null;
-  // The same stored value as lot_no_primary; editing either changes both.
+  // The same stored value as lot_no_primary, returned twice.
   lot_no_secondary: number | null;
   releve: number | null;
   data_type: string | null;
@@ -54,49 +54,31 @@ export type SamplingSpeciesListResponse = {
   offset: number;
 };
 
-type Input = "text" | "integer" | "specification" | "species";
-
 export type SamplingSpeciesColumn = {
   key: keyof SamplingSpeciesRow;
   label: string;
   sortable: boolean;
   // Only where sort_by differs from the response field name.
   sortKey?: string;
-  input?: Input;
-  // Key in the ObservationUpdate body when it differs from the column.
-  patchKey?: string;
 };
 
 export const SAMPLING_SPECIES_COLUMNS: SamplingSpeciesColumn[] = [
   { key: "sampling_id", label: "Sampling ID", sortable: true },
   { key: "site_id", label: "Site ID", sortable: true },
-  { key: "species_name", label: "Species name", sortable: true, input: "species" },
-  {
-    key: "specification",
-    label: "Specification",
-    sortable: true,
-    input: "specification",
-  },
-  { key: "alive", label: "Alive", sortable: true, input: "integer" },
-  { key: "empty", label: "Empty", sortable: true, input: "integer" },
-  { key: "undefined", label: "Undef.", sortable: true, input: "integer" },
+   { key: "species_name", label: "Species name", sortable: true },
+  { key: "specification", label: "Specification", sortable: true },
+  { key: "alive", label: "Alive", sortable: true },
+  { key: "empty", label: "Empty", sortable: true },
+  { key: "undefined", label: "Undef.", sortable: true },
   { key: "all_count", label: "All", sortable: true, sortKey: "all" },
   {
     key: "lot_no_primary",
     label: "Lot no.",
     sortable: true,
     sortKey: "lot_primary",
-    input: "integer",
-    patchKey: "lot",
   },
-  { key: "vouchers", label: "Vouchers", sortable: true, input: "integer" },
-  {
-    key: "observation_note",
-    label: "Note",
-    sortable: true,
-    input: "text",
-    patchKey: "note",
-  },
+  { key: "vouchers", label: "Vouchers", sortable: true },
+  { key: "observation_note", label: "Note", sortable: true },
   { key: "field_code", label: "Field code", sortable: true },
   { key: "country", label: "Country", sortable: true },
   { key: "site_name", label: "Site name", sortable: true },
@@ -123,8 +105,6 @@ export const SAMPLING_SPECIES_COLUMNS: SamplingSpeciesColumn[] = [
     label: "Lot no.",
     sortable: true,
     sortKey: "lot_secondary",
-    input: "integer",
-    patchKey: "lot",
   },
   { key: "releve", label: "Relevé no.", sortable: true },
   { key: "data_type", label: "Data type", sortable: true },
@@ -132,10 +112,6 @@ export const SAMPLING_SPECIES_COLUMNS: SamplingSpeciesColumn[] = [
   { key: "sampling_note", label: "Sampling note", sortable: true },
   { key: "research_type", label: "Research type", sortable: true },
 ];
-
-export const SAMPLING_SPECIES_EDITABLE = SAMPLING_SPECIES_COLUMNS.filter(
-  (c) => c.input,
-);
 
 export const SAMPLING_SPECIES_DEFAULT_SORT = "sampling_id";
 export const SAMPLING_SPECIES_ENTITY = "sampling-species";

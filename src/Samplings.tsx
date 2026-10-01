@@ -336,7 +336,7 @@ function Samplings() {
       return (
         <button
           type="button"
-          className="link-btn"
+          className="id-link"
           title="Species at this sampling"
           onClick={(e) => {
             e.stopPropagation();

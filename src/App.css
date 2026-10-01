@@ -1049,3 +1049,27 @@ tbody tr:hover {
 .col-habitat {
   width: 150px;
 }
+
+/* Clickable Sampling ID: fills its cell so the whole column is a target, and
+   draws its outline with an inset shadow so the row height never changes. */
+.id-link {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 0.35rem;
+  border: 0;
+  border-radius: 5px;
+  background: #eef3f8;
+  box-shadow: inset 0 0 0 1px #c6d4e1;
+  color: #0969da;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.id-link:hover {
+  background: #d7e6f7;
+  box-shadow: inset 0 0 0 1px #0969da;
+}
