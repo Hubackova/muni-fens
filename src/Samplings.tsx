@@ -14,6 +14,11 @@ import {
 } from "./api";
 import Autocomplete from "./Autocomplete";
 import ErrorBanner from "./ErrorBanner";
+import {
+  buildExportUrl,
+  downloadExport,
+  useRowSelection,
+} from "./export";
 import FilterDropdown from "./FilterDropdown";
 import type { LocalitySearchResult } from "./localities/types";
 import SamplingDetail from "./observations/SamplingDetail";
@@ -39,6 +44,7 @@ function Samplings() {
   const [rows, setRows] = useState<Sampling[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<string | null>(null);
@@ -84,10 +90,9 @@ function Samplings() {
 
   const filtersKey = JSON.stringify(filters);
 
-  const buildListUrl = (targetOffset: number) => {
+  // Everything but the paging, so the export can reuse it verbatim.
+  const buildQuery = () => {
     const params = new URLSearchParams({
-      limit: String(PAGE_SIZE),
-      offset: String(targetOffset),
       sort_by: sortBy,
       sort_order: sortOrder,
     });
@@ -96,6 +101,13 @@ function Samplings() {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
+    return params;
+  };
+
+  const buildListUrl = (targetOffset: number) => {
+    const params = buildQuery();
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(targetOffset));
     return `${API_BASE}?${params.toString()}`;
   };
 
@@ -115,6 +127,17 @@ function Samplings() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const pageIds = rows.map((row) => row.sampling_id);
+  const pageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+
+  const handleExport = () => {
+    const ids = pageIds.filter((id) => selected.has(id));
+    downloadExport(
+      buildExportUrl("/eco/samplings/export", buildQuery(), "sampling_ids", ids),
+    );
   };
 
   const loadMeta = async (signal?: AbortSignal) => {
@@ -309,6 +332,7 @@ function Samplings() {
       setIsSaving(true);
       await sendJson(`${API_BASE}/${row.sampling_id}`, "DELETE");
       if (editingId === row.sampling_id) cancelEditing();
+      clear();
       await reloadAll();
     } catch (err) {
       setError(`Failed to delete the sampling. (${errorMessage(err)})`);
@@ -435,6 +459,12 @@ function Samplings() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
+
+        <button type="button" className="toolbar-toggle" onClick={handleExport}>
+          {selected.size > 0
+            ? `Export ${selected.size} selected`
+            : "Export CSV"}
+        </button>
       </div>
 
       {rows.length > 0 ? (
@@ -443,6 +473,18 @@ function Samplings() {
             <table className="samplings-table">
               <thead>
                 <tr>
+                  <th className="col-select">
+                    <input
+                      type="checkbox"
+                      aria-label="Select the rows on this page"
+                      checked={pageSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setMany(pageIds, e.target.checked);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
                   {SAMPLING_COLUMNS.map((col) => {
                     const meta = filterMetaByField.get(col.key);
                     const selectedCount = meta
@@ -514,6 +556,15 @@ function Samplings() {
                       onClick={() => !isEditing && startEditing(row)}
                       className={isEditing ? "row-editing" : "row-clickable"}
                     >
+                      <td className="col-select">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select sampling #${row.sampling_id}`}
+                          checked={selected.has(row.sampling_id)}
+                          onChange={() => toggle(row.sampling_id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </td>
                       {SAMPLING_COLUMNS.map((col) => (
                         <td key={col.key} className={`col-${col.key}`}>
                           {renderCell(row, col, isEditing)}

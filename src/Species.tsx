@@ -28,6 +28,11 @@ import {
   type SortOrder,
 } from "./species/types";
 import ErrorBanner from "./ErrorBanner";
+import {
+  buildExportUrl,
+  downloadExport,
+  useRowSelection,
+} from "./export";
 
 const API_BASE = `${API_ROOT}/${SPECIES_ENTITY}`;
 const PAGE_SIZE = 50;
@@ -45,6 +50,7 @@ function Species() {
   const [rows, setRows] = useState<SpeciesRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -105,10 +111,9 @@ function Species() {
   const filtersKey = JSON.stringify(filters);
 
   // Build the list URL with paging, sorting, search and repeated filter params.
-  const buildListUrl = (targetOffset: number) => {
+  // Everything but the paging, so the export can reuse it verbatim.
+  const buildQuery = () => {
     const params = new URLSearchParams({
-      limit: String(PAGE_SIZE),
-      offset: String(targetOffset),
       sort_by: sortBy,
       sort_order: sortOrder,
     });
@@ -118,7 +123,27 @@ function Species() {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
+    return params;
+  };
+
+  const buildListUrl = (targetOffset: number) => {
+    const params = buildQuery();
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(targetOffset));
     return `${API_BASE}?${params.toString()}`;
+  };
+
+  const pageIds = rows.map((row) => row.species_id);
+  const pageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+
+  const handleExport = () => {
+    const ids = rows
+      .map((row) => row.species_id)
+      .filter((id) => selected.has(id));
+    downloadExport(
+      buildExportUrl("/species/export", buildQuery(), "species_ids", ids),
+    );
   };
 
   // Load metadata (filters, cleanup fields, lookups). Re-run after mutations so
@@ -292,6 +317,7 @@ function Species() {
       setIsSaving(true);
       await sendJson(`${API_BASE}/${row.species_id}`, "DELETE");
       if (editingId === row.species_id) setEditingId(null);
+      clear();
       await reloadAll();
     } catch (err) {
       setError(`Failed to delete the species. (${errorMessage(err)})`);
@@ -386,6 +412,12 @@ function Species() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
+        <button type="button" className="toolbar-toggle" onClick={handleExport}>
+          {selected.size > 0
+            ? `Export ${selected.size} selected`
+            : "Export CSV"}
+        </button>
+
         <button
           type="button"
           className="btn-add"
@@ -401,6 +433,18 @@ function Species() {
             <table>
               <thead>
                 <tr>
+                  <th className="col-select">
+                    <input
+                      type="checkbox"
+                      aria-label="Select the rows on this page"
+                      checked={pageSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setMany(pageIds, e.target.checked);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
                   {SPECIES_COLUMNS.map((col) => {
                     const meta = col.metaField
                       ? filterMetaByField.get(col.metaField)
@@ -496,6 +540,15 @@ function Species() {
                       onClick={() => !isEditing && startEditing(row)}
                       className={isEditing ? "row-editing" : "row-clickable"}
                     >
+                      <td className="col-select">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${row.species_name ?? row.species_id}`}
+                          checked={selected.has(row.species_id)}
+                          onChange={() => toggle(row.species_id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </td>
                       {SPECIES_COLUMNS.map((col) => (
                         <td key={col.key} className={`col-${col.key}`}>
                           {renderCell(row, col, isEditing)}

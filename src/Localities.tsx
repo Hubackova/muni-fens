@@ -28,6 +28,11 @@ import {
 } from "./localities/types";
 import type { SortOrder } from "./species/types";
 import ErrorBanner from "./ErrorBanner";
+import {
+  buildExportUrl,
+  downloadExport,
+  useRowSelection,
+} from "./export";
 
 const API_BASE = `${API_ROOT}/${LOCALITY_ENTITY}`;
 const PAGE_SIZE = 50;
@@ -50,6 +55,7 @@ function Localities({ eco = false }: Props) {
   const [rows, setRows] = useState<Locality[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,10 +126,9 @@ function Localities({ eco = false }: Props) {
   // Serialize everything the loader depends on so it re-runs on any change.
   const filtersKey = JSON.stringify(filters);
 
-  const buildListUrl = (targetOffset: number) => {
+  // Everything but the paging, so the export can reuse it verbatim.
+  const buildQuery = () => {
     const params = new URLSearchParams({
-      limit: String(PAGE_SIZE),
-      offset: String(targetOffset),
       sort_by: sortBy,
       sort_order: sortOrder,
     });
@@ -137,6 +142,13 @@ function Localities({ eco = false }: Props) {
       params.set("filter_deleted", deletedMode === "deleted" ? "1" : "0");
     }
     if (eco && onlyEco) params.set("filter_entry_point", "ECO");
+    return params;
+  };
+
+  const buildListUrl = (targetOffset: number) => {
+    const params = buildQuery();
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(targetOffset));
     return `${API_BASE}?${params.toString()}`;
   };
 
@@ -159,6 +171,17 @@ function Localities({ eco = false }: Props) {
   };
 
   // Filter options and lookups.
+  const pageIds = rows.map((row) => row.id);
+  const pageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+
+  const handleExport = () => {
+    const ids = pageIds.filter((id) => selected.has(id));
+    downloadExport(
+      buildExportUrl("/localities/export", buildQuery(), "locality_ids", ids),
+    );
+  };
+
   const loadMeta = async (signal?: AbortSignal) => {
     try {
       const opts = signal ? { signal } : undefined;
@@ -487,6 +510,12 @@ function Localities({ eco = false }: Props) {
           </button>
         )}
 
+        <button type="button" className="toolbar-toggle" onClick={handleExport}>
+          {selected.size > 0
+            ? `Export ${selected.size} selected`
+            : "Export CSV"}
+        </button>
+
         <button
           type="button"
           className="btn-add"
@@ -502,6 +531,18 @@ function Localities({ eco = false }: Props) {
             <table className="localities-table">
               <thead>
                 <tr>
+                  <th className="col-select">
+                    <input
+                      type="checkbox"
+                      aria-label="Select the rows on this page"
+                      checked={pageSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setMany(pageIds, e.target.checked);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
                   {visibleColumns.map((col) => {
                     const meta = col.metaField
                       ? filterMetaByField.get(col.metaField)
@@ -575,6 +616,15 @@ function Localities({ eco = false }: Props) {
                       onClick={() => !isEditing && startEditing(row)}
                       className={isEditing ? "row-editing" : "row-clickable"}
                     >
+                      <td className="col-select">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${row.name}`}
+                          checked={selected.has(row.id)}
+                          onChange={() => toggle(row.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </td>
                       {visibleColumns.map((col) => (
                         <td key={col.key} className={`col-${col.key}`}>
                           {renderCell(row, col, isEditing)}
@@ -667,6 +717,7 @@ function Localities({ eco = false }: Props) {
           onClose={() => setIsMergeOpen(false)}
           onDone={async (newId: number) => {
             setNotice(`Localities merged into #${newId}.`);
+            clear();
             await reloadAll();
           }}
         />
@@ -676,7 +727,10 @@ function Localities({ eco = false }: Props) {
         <PruneDialog
           locality={pruneFor}
           onClose={() => setPruneFor(null)}
-          onDone={reloadAll}
+          onDone={async () => {
+            clear();
+            await reloadAll();
+          }}
         />
       )}
     </section>

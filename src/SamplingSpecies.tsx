@@ -11,6 +11,11 @@ import {
   type LookupsResponse,
 } from "./api";
 import ErrorBanner from "./ErrorBanner";
+import {
+  buildExportUrl,
+  downloadExport,
+  useRowSelection,
+} from "./export";
 import FilterDropdown from "./FilterDropdown";
 import SamplingDetail from "./observations/SamplingDetail";
 import {
@@ -34,6 +39,7 @@ function SamplingSpecies() {
   const [rows, setRows] = useState<SamplingSpeciesRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { selected, toggle, setMany } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,10 +75,9 @@ function SamplingSpecies() {
 
   const filtersKey = JSON.stringify(filters);
 
-  const buildListUrl = (targetOffset: number) => {
+  // Everything but the paging, so the export can reuse it verbatim.
+  const buildQuery = () => {
     const params = new URLSearchParams({
-      limit: String(PAGE_SIZE),
-      offset: String(targetOffset),
       sort_by: sortBy,
       sort_order: sortOrder,
     });
@@ -81,6 +86,13 @@ function SamplingSpecies() {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
+    return params;
+  };
+
+  const buildListUrl = (targetOffset: number) => {
+    const params = buildQuery();
+    params.set("limit", String(PAGE_SIZE));
+    params.set("offset", String(targetOffset));
     return `${API_BASE}?${params.toString()}`;
   };
 
@@ -100,6 +112,22 @@ function SamplingSpecies() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const pageIds = rows.map((row) => row.observation_id);
+  const pageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+
+  const handleExport = () => {
+    const ids = pageIds.filter((id) => selected.has(id));
+    downloadExport(
+      buildExportUrl(
+        "/eco/sampling-species/export",
+        buildQuery(),
+        "observation_ids",
+        ids,
+      ),
+    );
   };
 
   const loadMeta = async (signal?: AbortSignal) => {
@@ -253,6 +281,12 @@ function SamplingSpecies() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
+
+        <button type="button" className="toolbar-toggle" onClick={handleExport}>
+          {selected.size > 0
+            ? `Export ${selected.size} selected`
+            : "Export CSV"}
+        </button>
       </div>
 
       {rows.length > 0 ? (
@@ -261,6 +295,18 @@ function SamplingSpecies() {
             <table className="sampling-species-table">
               <thead>
                 <tr>
+                  <th className="col-select">
+                    <input
+                      type="checkbox"
+                      aria-label="Select the rows on this page"
+                      checked={pageSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setMany(pageIds, e.target.checked);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </th>
                   {SAMPLING_SPECIES_COLUMNS.map((col) => {
                     const meta = filterMetaByField.get(col.key);
                     const selectedCount = meta
@@ -326,6 +372,14 @@ function SamplingSpecies() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.observation_id}>
+                    <td className="col-select">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select observation #${row.observation_id}`}
+                        checked={selected.has(row.observation_id)}
+                        onChange={() => toggle(row.observation_id)}
+                      />
+                    </td>
                     {SAMPLING_SPECIES_COLUMNS.map((col) => (
                       <td key={col.key} className={`col-${col.key}`}>
                         {renderCell(row, col)}
