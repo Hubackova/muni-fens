@@ -18,68 +18,48 @@ type Tab =
   | "sampling-species"
   | "add";
 
+// The tabs split in two: data shared by every interface, and the ECO part.
+const SHARED_TABS: { id: Tab; label: string }[] = [
+  { id: "species", label: "Species" },
+  { id: "countries", label: "Countries" },
+  { id: "localities", label: "Localities" },
+];
+
+const ECO_TABS: { id: Tab; label: string }[] = [
+  { id: "localities-eco", label: "Localities" },
+  { id: "samplings", label: "Samplings" },
+  { id: "observations", label: "Observations" },
+  { id: "sampling-species", label: "All data" },
+  { id: "add", label: "Add new" },
+];
+
 function App() {
   const [tab, setTab] = useState<Tab>("species");
+
+  const renderGroup = (label: string, tabs: { id: Tab; label: string }[]) => (
+    <div className="nav-group">
+      <span className="nav-group-label">{label}</span>
+      <div className="nav-group-tabs">
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={tab === item.id ? "nav-active" : ""}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <>
       <nav className="main-nav">
-        <button
-          type="button"
-          className={tab === "species" ? "nav-active" : ""}
-          onClick={() => setTab("species")}
-        >
-          Species
-        </button>
-        <button
-          type="button"
-          className={tab === "countries" ? "nav-active" : ""}
-          onClick={() => setTab("countries")}
-        >
-          Countries
-        </button>
-        <button
-          type="button"
-          className={tab === "localities" ? "nav-active" : ""}
-          onClick={() => setTab("localities")}
-        >
-          Localities
-        </button>
-        <button
-          type="button"
-          className={tab === "localities-eco" ? "nav-active" : ""}
-          onClick={() => setTab("localities-eco")}
-        >
-          Localities ECO
-        </button>
-        <button
-          type="button"
-          className={tab === "samplings" ? "nav-active" : ""}
-          onClick={() => setTab("samplings")}
-        >
-          Samplings
-        </button>
-        <button
-          type="button"
-          className={tab === "observations" ? "nav-active" : ""}
-          onClick={() => setTab("observations")}
-        >
-          Observations
-        </button>
-        <button
-          type="button"
-          className={tab === "sampling-species" ? "nav-active" : ""}
-          onClick={() => setTab("sampling-species")}
-        >
-          All data
-        </button>
-        <button
-          type="button"
-          className={tab === "add" ? "nav-active" : ""}
-          onClick={() => setTab("add")}
-        >
-          Add new
-        </button>
+        {renderGroup("Shared", SHARED_TABS)}
+        <span className="nav-divider" aria-hidden="true" />
+        {renderGroup("ECO", ECO_TABS)}
       </nav>
       {tab === "species" && <Species />}
       {tab === "countries" && <Countries />}

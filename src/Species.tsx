@@ -281,7 +281,12 @@ function Species() {
   // still referencing it in other tables stay intact.
   const handleDelete = async (row: SpeciesRow) => {
     const name = row.species_name ?? `#${row.species_id}`;
-    if (!window.confirm(`Really delete the species "${name}"?`)) return;
+    const confirmed = window.confirm(
+      `Delete the species "${name}"?\n\n` +
+        "It stays in the database so that records still referring to it keep " +
+        "working, and only disappears from the regular views.",
+    );
+    if (!confirmed) return;
 
     try {
       setIsSaving(true);

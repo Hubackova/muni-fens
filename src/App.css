@@ -8,10 +8,39 @@
 
 .main-nav {
   display: flex;
-  gap: 0.5rem;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
   box-sizing: border-box;
   margin: 1.5rem auto 0;
   padding: 0 1rem;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8c959f;
+}
+
+.nav-group-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Keeps the two groups apart even when the row wraps. */
+.nav-divider {
+  align-self: stretch;
+  width: 1px;
+  margin-top: 1rem;
+  background: #d0d7de;
 }
 
 .main-nav button {
