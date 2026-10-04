@@ -305,7 +305,7 @@ function SamplingForm({ lookups }: Props) {
           </select>
         </label>
         <label>
-          Event
+          PLA/Event
           <input
             value={form.event}
             onChange={(e) => update({ event: e.target.value })}

@@ -279,7 +279,7 @@ function LocalityForm({ lookups }: Props) {
 
       <div className="form-row">
         <label>
-          Grid
+          KFME Grid
           <input
             type="number"
             value={form.eur_grid}

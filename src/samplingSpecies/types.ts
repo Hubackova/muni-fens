@@ -86,7 +86,7 @@ export const SAMPLING_SPECIES_COLUMNS: SamplingSpeciesColumn[] = [
   { key: "longitude", label: "Longitude", sortable: true },
   { key: "state_region", label: "State/Province/Region", sortable: true },
   { key: "settlement", label: "Settlement", sortable: true },
-  { key: "grid", label: "Grid", sortable: true },
+  { key: "grid", label: "KFME Grid", sortable: true },
   { key: "subgrid", label: "Subgrid", sortable: true },
   { key: "masl", label: "m a.s.l.", sortable: true },
   { key: "locality_note", label: "Locality note", sortable: true },
@@ -108,7 +108,7 @@ export const SAMPLING_SPECIES_COLUMNS: SamplingSpeciesColumn[] = [
   },
   { key: "releve", label: "Relevé no.", sortable: true },
   { key: "data_type", label: "Data type", sortable: true },
-  { key: "event", label: "PLA/event", sortable: true },
+  { key: "event", label: "PLA/Event", sortable: true },
   { key: "sampling_note", label: "Sampling note", sortable: true },
   { key: "research_type", label: "Research type", sortable: true },
 ];

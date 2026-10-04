@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Filter } from "lucide-react";
+import { ArrowDown, ArrowUp, Eraser, Filter } from "lucide-react";
 import {
   API_ROOT,
   errorMessage,
@@ -21,6 +21,7 @@ import {
 } from "./export";
 import FilterDropdown from "./FilterDropdown";
 import type { LocalitySearchResult } from "./localities/types";
+import CleanupDialog from "./species/CleanupDialog";
 import SamplingDetail from "./observations/SamplingDetail";
 import {
   SAMPLING_COLUMNS,
@@ -32,7 +33,10 @@ import {
   type SamplingColumn,
   type SamplingListResponse,
 } from "./samplings/types";
-import type { SortOrder } from "./species/types";
+import type {
+  CleanupFieldsResponse,
+  SortOrder,
+} from "./species/types";
 
 const API_BASE = `${API_ROOT}/eco/samplings`;
 const PAGE_SIZE = 50;
@@ -51,6 +55,9 @@ function Samplings() {
 
   const [filterMeta, setFilterMeta] = useState<FilterMeta[]>([]);
   const [lookups, setLookups] = useState<LookupsResponse>({});
+  // Columns the backend can bulk-rewrite, from /cleanup/samplings.
+  const [cleanupFields, setCleanupFields] = useState<Set<string>>(new Set());
+  const [cleanupField, setCleanupField] = useState<SamplingColumn | null>(null);
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -143,13 +150,18 @@ function Samplings() {
   const loadMeta = async (signal?: AbortSignal) => {
     try {
       const opts = signal ? { signal } : undefined;
-      const [filtersRes, lookupsRes] = await Promise.all([
+      const [filtersRes, lookupsRes, cleanupRes] = await Promise.all([
         fetchJson<FiltersResponse>(
           `${API_ROOT}/meta/filters/${SAMPLING_ENTITY}`,
           opts,
         ),
         fetchJson<LookupsResponse>(`${API_ROOT}/meta/lookups`, opts),
+        fetchJson<CleanupFieldsResponse>(
+          `${API_ROOT}/cleanup/${SAMPLING_ENTITY}`,
+          opts,
+        ),
       ]);
+      setCleanupFields(new Set((cleanupRes.cleanup ?? []).map((c) => c.field)));
       // date_precision drives the date filter on the backend but is never
       // shown, so it gets no column and no filter of its own.
       const nextFilters = (filtersRes.filters ?? []).filter(
@@ -515,6 +527,21 @@ function Samplings() {
                               ))}
                           </button>
 
+                          {cleanupFields.has(col.key) && (
+                            <button
+                              type="button"
+                              className="th-action"
+                              title="Cleanup"
+                              aria-label={`Cleanup ${col.label}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCleanupField(col);
+                              }}
+                            >
+                              <Eraser size={13} />
+                            </button>
+                          )}
+
                           {meta && (
                             <button
                               type="button"
@@ -634,6 +661,16 @@ function Samplings() {
       ) : (
         !isInitialLoading &&
         !error && <p className="empty">No samplings found.</p>
+      )}
+
+      {cleanupField && (
+        <CleanupDialog
+          entity={SAMPLING_ENTITY}
+          field={cleanupField.key}
+          label={cleanupField.label}
+          onClose={() => setCleanupField(null)}
+          onDone={reloadAll}
+        />
       )}
 
       {openMeta && filterAnchor && (

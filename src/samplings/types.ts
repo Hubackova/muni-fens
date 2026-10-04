@@ -71,7 +71,7 @@ export const SAMPLING_COLUMNS: SamplingColumn[] = [
   { key: "settlement", label: "Settlement", sortable: true },
   { key: "latitude", label: "Latitude", sortable: true },
   { key: "longitude", label: "Longitude", sortable: true },
-  { key: "eur_grid", label: "Grid", sortable: true },
+  { key: "eur_grid", label: "KFME Grid", sortable: true },
   { key: "eur_subgrid", label: "Subgrid", sortable: true },
   { key: "masl", label: "m a.s.l.", sortable: true },
   { key: "locality_note", label: "Locality note", sortable: false },
@@ -157,7 +157,7 @@ export const SAMPLING_COLUMNS: SamplingColumn[] = [
   },
   {
     key: "event",
-    label: "PLA/event",
+    label: "PLA/Event",
     sortable: true,
     input: "text",
     nullable: true,

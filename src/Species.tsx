@@ -43,6 +43,7 @@ type EditValues = {
   species: string;
   abbreviation: string;
   species_group: string; // sent as `type`
+  author_year: string;
   note: string;
 };
 
@@ -85,6 +86,7 @@ function Species() {
     species: "",
     abbreviation: "",
     species_group: "",
+    author_year: "",
     note: "",
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -269,6 +271,7 @@ function Species() {
       species: row.species_name ?? "",
       abbreviation: row.abbreviation ?? "",
       species_group: row.species_group ?? "",
+      author_year: row.author_year ?? "",
       note: row.note ?? "",
     });
   };
@@ -287,6 +290,7 @@ function Species() {
       await sendJson(`${API_BASE}/${row.species_id}`, "PATCH", {
         species,
         abbreviation: editValues.abbreviation.trim() || null,
+        author_year: editValues.author_year.trim() || null,
         note: editValues.note.trim() || null,
         type: editValues.species_group || null,
       });
@@ -353,6 +357,18 @@ function Species() {
           value={editValues.abbreviation}
           onChange={(e) =>
             setEditValues((v) => ({ ...v, abbreviation: e.target.value }))
+          }
+          onClick={(e) => e.stopPropagation()}
+        />
+      );
+    }
+    if (isEditing && col.key === "author_year") {
+      return (
+        <input
+          className={errorField === "author_year" ? "input-error" : undefined}
+          value={editValues.author_year}
+          onChange={(e) =>
+            setEditValues((v) => ({ ...v, author_year: e.target.value }))
           }
           onClick={(e) => e.stopPropagation()}
         />

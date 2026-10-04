@@ -137,7 +137,7 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
   { key: "current_habitat", label: "Current habitat", sortable: true },
   {
     key: "eur_grid",
-    label: "Grid",
+    label: "KFME Grid",
     sortable: true,
     metaField: "eur_grid",
     input: "integer",
