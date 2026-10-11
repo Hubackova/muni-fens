@@ -42,6 +42,12 @@ function LocalityForm({ lookups }: Props) {
     alpha3: string;
     name: string;
   } | null>(null);
+  // The unique codes copied from the template: while a field still holds the
+  // template's value, it would collide on save.
+  const [templateCodes, setTemplateCodes] = useState<{
+    site_id: string;
+    field_code: string;
+  } | null>(null);
   const [template, setTemplate] = useState<LocalitySearchResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,8 +70,8 @@ function LocalityForm({ lookups }: Props) {
   // alpha3 actually sent: a freshly picked country wins over the template's.
   const countryCode = country?.alpha3 ?? templateCountry?.alpha3 ?? null;
 
-  // Copy an existing locality into the form. Site ID and Field code are left
-  // empty on purpose - they are UNIQUE, so copying them guarantees a 409.
+  // Copy an existing locality into the form. Site ID and Field code come over
+  // too, but they are UNIQUE, so they are flagged until the user changes them.
   const applyTemplate = async (picked: LocalitySearchResult | null) => {
     setTemplate(picked);
     if (!picked) return;
@@ -75,8 +81,8 @@ function LocalityForm({ lookups }: Props) {
         `${API_ROOT}/localities/${picked.id}`,
       );
       setForm({
-        site_id: "",
-        field_code: "",
+        site_id: detail.site_id ?? "",
+        field_code: detail.field_code ?? "",
         name: detail.name,
         latitude: String(detail.latitude),
         longitude: String(detail.longitude),
@@ -89,9 +95,30 @@ function LocalityForm({ lookups }: Props) {
       });
       setCountry(null);
       setTemplateCountry({ alpha3: detail.country, name: detail.name_en });
+      setTemplateCodes({
+        site_id: detail.site_id ?? "",
+        field_code: detail.field_code ?? "",
+      });
     } catch (err) {
       setError(`Failed to load the template locality. (${errorMessage(err)})`);
     }
+  };
+
+  // Clears the form, including a template that was loaded into it.
+  // The type-aheads keep the typed text in their own state, so Reset gives
+  // them a new key and they come back empty.
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleReset = () => {
+    setResetKey((n) => n + 1);
+    setForm(emptyForm);
+    setCountry(null);
+    setTemplateCountry(null);
+    setTemplateCodes(null);
+    setTemplate(null);
+    setError(null);
+    setErrorField(null);
+    setCreated(null);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -158,6 +185,17 @@ function LocalityForm({ lookups }: Props) {
   const fieldClass = (field: string) =>
     errorField === field ? "input-error" : undefined;
 
+  // True while a unique code is still the one inherited from the template.
+  const isInherited = (field: "site_id" | "field_code") =>
+    !!templateCodes &&
+    templateCodes[field] !== "" &&
+    form[field] === templateCodes[field];
+
+  const codeClass = (field: "site_id" | "field_code") =>
+    [fieldClass(field), isInherited(field) ? "input-error" : undefined]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
@@ -169,6 +207,7 @@ function LocalityForm({ lookups }: Props) {
         <label className="grow">
           Use locality as template
           <Autocomplete<LocalitySearchResult>
+            key={resetKey}
             url={(q) =>
               `${API_ROOT}/localities/search?q=${encodeURIComponent(q)}`
             }
@@ -180,9 +219,9 @@ function LocalityForm({ lookups }: Props) {
             placeholder="Search an existing locality..."
           />
           <small className="hint">
-            Copies the values below. Site ID and Field code are left empty
-            because they must stay unique; the new locality is not linked to the
-            template.
+            Copies the values below. Site ID and Field code must be changed
+            before saving - they have to stay unique. The new locality is not
+            linked to the template.
           </small>
         </label>
       </div>
@@ -191,18 +230,28 @@ function LocalityForm({ lookups }: Props) {
         <label>
           Site ID
           <input
-            className={fieldClass("site_id")}
+            className={codeClass("site_id")}
             value={form.site_id}
             onChange={(e) => update({ site_id: e.target.value })}
           />
+          {isInherited("site_id") && (
+            <small className="field-warning">
+              Taken from the template - change it or clear it.
+            </small>
+          )}
         </label>
         <label>
           Field code
           <input
-            className={fieldClass("field_code")}
+            className={codeClass("field_code")}
             value={form.field_code}
             onChange={(e) => update({ field_code: e.target.value })}
           />
+          {isInherited("field_code") && (
+            <small className="field-warning">
+              Taken from the template - change it or clear it.
+            </small>
+          )}
         </label>
         <label className="grow">
           Site name *
@@ -238,6 +287,7 @@ function LocalityForm({ lookups }: Props) {
         <label className="grow">
           Country *
           <Autocomplete<CountrySearchResult>
+            key={resetKey}
             url={(q) =>
               `${API_ROOT}/countries/search?q=${encodeURIComponent(q)}`
             }
@@ -313,6 +363,14 @@ function LocalityForm({ lookups }: Props) {
       <div className="form-row">
         <button type="submit" disabled={isSaving}>
           {isSaving ? "Saving..." : "Add locality"}
+        </button>
+        <button
+          type="button"
+          className="btn-reset"
+          disabled={isSaving}
+          onClick={handleReset}
+        >
+          Reset
         </button>
       </div>
     </form>

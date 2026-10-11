@@ -307,6 +307,12 @@ td select {
   align-items: flex-end;
 }
 
+/* Inputs line up from the top, so a hint or a warning appearing under one of
+   them does not push its neighbours around. */
+.modal-form .form-row {
+  align-items: flex-start;
+}
+
 .form-row label {
   display: flex;
   flex-direction: column;
@@ -1122,4 +1128,21 @@ tbody tr:hover {
 .change-to {
   color: #1a7f37;
   font-weight: 600;
+}
+
+/* Secondary action in the add forms: clears what was typed. */
+.modal-form .form-row button.btn-reset {
+  border-color: #d0d7de;
+  color: #57606a;
+}
+
+.modal-form .form-row button.btn-reset:hover:not(:disabled) {
+  background: #f6f8fa;
+}
+
+/* Warns that a unique code still holds the template's value. */
+.field-warning {
+  display: block;
+  margin-top: 0.2rem;
+  color: #b00020;
 }

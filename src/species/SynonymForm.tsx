@@ -48,6 +48,18 @@ function SynonymForm({ lookups, onCreated }: Props) {
   const update = (patch: Partial<typeof form>) =>
     setForm((f) => ({ ...f, ...patch }));
 
+  // The type-aheads keep the typed text in their own state, so Reset gives
+  // them a new key and they come back empty.
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleReset = () => {
+    setResetKey((n) => n + 1);
+    setForm(emptyForm);
+    setPrevious(null);
+    setError(null);
+    setErrorField(null);
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -144,6 +156,7 @@ function SynonymForm({ lookups, onCreated }: Props) {
         <label className="grow">
           Synonym of (previous species)
           <SpeciesAutocomplete
+            key={resetKey}
             selected={previous}
             onSelect={setPrevious}
             placeholder="Leave empty to create a new species"
@@ -158,6 +171,14 @@ function SynonymForm({ lookups, onCreated }: Props) {
       <div className="form-row">
         <button type="submit" disabled={isSaving}>
           {isSaving ? "Saving..." : previous ? "Create synonym" : "Add species"}
+        </button>
+        <button
+          type="button"
+          className="btn-reset"
+          disabled={isSaving}
+          onClick={handleReset}
+        >
+          Reset
         </button>
       </div>
     </form>

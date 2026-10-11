@@ -88,6 +88,22 @@ function SamplingForm({ lookups }: Props) {
     }
   };
 
+  // Clears the form, including the locality the sampling was going into.
+  // The type-aheads keep the typed text in their own state, so Reset gives
+  // them a new key and they come back empty.
+  const [resetKey, setResetKey] = useState(0);
+
+  const handleReset = () => {
+    setResetKey((n) => n + 1);
+    setForm(emptyForm);
+    setDate(emptyDate);
+    setPicked(null);
+    setLocality(null);
+    setError(null);
+    setErrorField(null);
+    setCreated(null);
+  };
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -164,6 +180,7 @@ function SamplingForm({ lookups }: Props) {
         <label className="grow">
           Locality *
           <Autocomplete<LocalitySearchResult>
+            key={resetKey}
             url={(q) =>
               `${API_ROOT}/localities/search?q=${encodeURIComponent(q)}`
             }
@@ -389,6 +406,14 @@ function SamplingForm({ lookups }: Props) {
       <div className="form-row">
         <button type="submit" disabled={isSaving}>
           {isSaving ? "Saving..." : "Add sampling"}
+        </button>
+        <button
+          type="button"
+          className="btn-reset"
+          disabled={isSaving}
+          onClick={handleReset}
+        >
+          Reset
         </button>
       </div>
     </form>

@@ -126,7 +126,7 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
     input: "text",
     nullable: true,
   },
-  { key: "current_habitat", label: "Current habitat", sortable: true },
+  { key: "current_habitat", label: "Location / habitat", sortable: true },
   {
     key: "masl",
     label: "m a.s.l.",
