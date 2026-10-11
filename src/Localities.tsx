@@ -27,6 +27,9 @@ import {
   type LocalityListResponse,
 } from "./localities/types";
 import type { SortOrder } from "./species/types";
+import ConfirmChangesDialog, {
+  type FieldChange,
+} from "./ConfirmChangesDialog";
 import ErrorBanner from "./ErrorBanner";
 import {
   buildExportUrl,
@@ -97,6 +100,12 @@ function Localities({ eco = false }: Props) {
     null,
   );
   const [isSaving, setIsSaving] = useState(false);
+  // Holds the edit between the confirmation dialog and the request.
+  const [pendingSave, setPendingSave] = useState<{
+    row: Locality;
+    patch: Record<string, unknown>;
+    changes: FieldChange[];
+  } | null>(null);
   // Which cell the current error points at, so it can be outlined.
   const [errorField, setErrorField] = useState<string | null>(null);
 
@@ -375,7 +384,25 @@ function Localities({ eco = false }: Props) {
     return patch;
   };
 
-  const saveEditing = async (row: Locality) => {
+  const describe = (row: Locality, patch: Record<string, unknown>) =>
+    Object.entries(patch).map(([key, value]): FieldChange => {
+      if (key === "country") {
+        return {
+          label: "Country",
+          from: row.name_en,
+          to: editCountry?.name_en ?? String(value),
+        };
+      }
+      const column = LOCALITY_COLUMNS.find((col) => col.key === key);
+      const before = row[key as keyof Locality];
+      return {
+        label: column?.label ?? key,
+        from: before === null || before === "" ? "-" : String(before),
+        to: value === null || value === "" ? "-" : String(value),
+      };
+    });
+
+  const saveEditing = (row: Locality) => {
     const patch = buildPatch(row);
     if ("message" in patch && "field" in patch) {
       setError(patch.message as string);
@@ -386,15 +413,21 @@ function Localities({ eco = false }: Props) {
       cancelEditing();
       return;
     }
+    setPendingSave({ row, patch, changes: describe(row, patch) });
+  };
 
+  const commitSave = async () => {
+    if (!pendingSave) return;
     try {
       setIsSaving(true);
-      await sendJson(`${API_BASE}/${row.id}`, "PATCH", patch);
+      await sendJson(`${API_BASE}/${pendingSave.row.id}`, "PATCH", pendingSave.patch);
+      setPendingSave(null);
       cancelEditing();
       setError(null);
       setErrorField(null);
       await reloadAll();
     } catch (err) {
+      setPendingSave(null);
       setError(`Failed to save changes. (${errorMessage(err)})`);
       setErrorField(isFieldError(err) ? err.field : null);
     } finally {
@@ -627,6 +660,18 @@ function Localities({ eco = false }: Props) {
                     <tr
                       key={row.id}
                       onClick={() => !isEditing && startEditing(row)}
+                      onKeyDown={(e) => {
+                        if (!isEditing) return;
+                        // Enter inside the type-ahead belongs to the search.
+                        const inAutocomplete = (
+                          e.target as HTMLElement
+                        ).classList.contains("autocomplete-input");
+                        if (e.key === "Enter" && !inAutocomplete) {
+                          e.preventDefault();
+                          void saveEditing(row);
+                        }
+                        if (e.key === "Escape") cancelEditing();
+                      }}
                       className={isEditing ? "row-editing" : "row-clickable"}
                     >
                       <td className="col-select">
@@ -713,6 +758,16 @@ function Localities({ eco = false }: Props) {
       ) : (
         !isInitialLoading &&
         !error && <p className="empty">No localities found.</p>
+      )}
+
+      {pendingSave && (
+        <ConfirmChangesDialog
+          title={`Save changes to "${pendingSave.row.name}"?`}
+          changes={pendingSave.changes}
+          isSaving={isSaving}
+          onConfirm={commitSave}
+          onCancel={() => setPendingSave(null)}
+        />
       )}
 
       {openMeta && filterAnchor && (

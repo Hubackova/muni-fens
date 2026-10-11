@@ -1112,3 +1112,14 @@ tbody tr:hover {
   margin: 0;
   cursor: pointer;
 }
+
+/* Before/after values in the edit confirmation. */
+.change-from {
+  color: #57606a;
+  text-decoration: line-through;
+}
+
+.change-to {
+  color: #1a7f37;
+  font-weight: 600;
+}

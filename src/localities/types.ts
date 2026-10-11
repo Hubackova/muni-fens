@@ -126,6 +126,7 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
     input: "text",
     nullable: true,
   },
+  { key: "current_habitat", label: "Current habitat", sortable: true },
   {
     key: "masl",
     label: "m a.s.l.",
@@ -134,7 +135,6 @@ export const LOCALITY_COLUMNS: LocalityColumn[] = [
     input: "integer",
     nullable: true,
   },
-  { key: "current_habitat", label: "Current habitat", sortable: true },
   {
     key: "eur_grid",
     label: "KFME Grid",
