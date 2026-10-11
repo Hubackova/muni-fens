@@ -66,6 +66,10 @@ function Observations() {
 
   // false widens the table to DNA observations as well.
   const [onlyEco, setOnlyEco] = useState(true);
+  // Taken from the filter metadata: the response calls this research_type
+  // while the query param is still filter_entry_point, and an unknown filter
+  // name would be ignored without a word.
+  const [entryPointParam, setEntryPointParam] = useState("filter_entry_point");
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<EditValues>({});
@@ -102,7 +106,7 @@ function Observations() {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
-    if (onlyEco) params.set("filter_entry_point", "ECO");
+    if (onlyEco) params.set(entryPointParam, "ECO");
     return params;
   };
 
@@ -152,10 +156,17 @@ function Observations() {
         ),
         fetchJson<LookupsResponse>(`${API_ROOT}/meta/lookups`, opts),
       ]);
-      // entry_point is driven by the button above the table, so it gets no
-      // column filter of its own.
-      const nextFilters = (filtersRes.filters ?? []).filter(
-        (m) => m.field !== "entry_point",
+      // The entry point is driven by the button above the table, so it gets
+      // no column filter of its own.
+      const all = filtersRes.filters ?? [];
+      const entryPoint = all.find(
+        (m) => m.field === "entry_point" || m.field === "research_type",
+      );
+      if (entryPoint && isValueFilter(entryPoint)) {
+        setEntryPointParam(entryPoint.param);
+      }
+      const nextFilters = all.filter(
+        (m) => m.field !== "entry_point" && m.field !== "research_type",
       );
       setFilterMeta(nextFilters);
       setLookups(lookupsRes ?? {});

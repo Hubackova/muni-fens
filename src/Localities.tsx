@@ -81,6 +81,10 @@ function Localities({ eco = false }: Props) {
   const [deletedMode, setDeletedMode] = useState<DeletedMode>("active");
   // ECO tab only: false widens the table to DNA localities as well.
   const [onlyEco, setOnlyEco] = useState(true);
+  // The param that carries the entry point, taken from the filter metadata -
+  // an unknown filter name is silently ignored by the API, so it must not be
+  // guessed. Falls back to the name in use today.
+  const [entryPointParam, setEntryPointParam] = useState("filter_entry_point");
   // Set after a merge so the user can see where the records ended up.
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -141,7 +145,7 @@ function Localities({ eco = false }: Props) {
     if (deletedMode !== "all") {
       params.set("filter_deleted", deletedMode === "deleted" ? "1" : "0");
     }
-    if (eco && onlyEco) params.set("filter_entry_point", "ECO");
+    if (eco && onlyEco) params.set(entryPointParam, "ECO");
     return params;
   };
 
@@ -194,8 +198,17 @@ function Localities({ eco = false }: Props) {
       ]);
       // Both are driven by controls above the table, so neither gets a
       // column filter of its own.
-      const nextFilters = (filtersRes.filters ?? []).filter(
-        (m) => m.field !== "deleted" && !(eco && m.field === "entry_point"),
+      const all = filtersRes.filters ?? [];
+      const entryPoint = all.find(
+        (m) => m.field === "entry_point" || m.field === "research_type",
+      );
+      if (entryPoint && isValueFilter(entryPoint)) {
+        setEntryPointParam(entryPoint.param);
+      }
+      const nextFilters = all.filter(
+        (m) =>
+          m.field !== "deleted" &&
+          !(eco && (m.field === "entry_point" || m.field === "research_type")),
       );
       setFilterMeta(nextFilters);
       setLookups(lookupsRes ?? {});
