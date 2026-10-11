@@ -28,6 +28,8 @@ import {
   type SortOrder,
 } from "./species/types";
 import ErrorBanner from "./ErrorBanner";
+import WrapTextToggle from "./WrapTextToggle";
+import { useWrapText } from "./useWrapText";
 import {
   buildExportUrl,
   downloadExport,
@@ -51,6 +53,7 @@ function Species() {
   const [rows, setRows] = useState<SpeciesRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { wrapped, toggle: toggleWrap, tableClass } = useWrapText();
   const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -441,12 +444,14 @@ function Species() {
         >
           + Add new
         </button>
+
+        <WrapTextToggle wrapped={wrapped} onToggle={toggleWrap} />
       </div>
 
       {rows.length > 0 ? (
         <>
           <div className="table-wrap">
-            <table>
+            <table className={`species-table${tableClass}`}>
               <thead>
                 <tr>
                   <th className="col-select">

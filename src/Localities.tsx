@@ -31,6 +31,8 @@ import ConfirmChangesDialog, {
   type FieldChange,
 } from "./ConfirmChangesDialog";
 import ErrorBanner from "./ErrorBanner";
+import WrapTextToggle from "./WrapTextToggle";
+import { useWrapText } from "./useWrapText";
 import {
   buildExportUrl,
   downloadExport,
@@ -58,6 +60,7 @@ function Localities({ eco = false }: Props) {
   const [rows, setRows] = useState<Locality[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { wrapped, toggle: toggleWrap, tableClass } = useWrapText();
   const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -569,12 +572,14 @@ function Localities({ eco = false }: Props) {
         >
           Merge localities
         </button>
+
+        <WrapTextToggle wrapped={wrapped} onToggle={toggleWrap} />
       </div>
 
       {rows.length > 0 ? (
         <>
           <div className="table-wrap">
-            <table className="localities-table">
+            <table className={`localities-table${tableClass}`}>
               <thead>
                 <tr>
                   <th className="col-select">

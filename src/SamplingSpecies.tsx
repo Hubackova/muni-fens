@@ -11,6 +11,8 @@ import {
   type LookupsResponse,
 } from "./api";
 import ErrorBanner from "./ErrorBanner";
+import WrapTextToggle from "./WrapTextToggle";
+import { useWrapText } from "./useWrapText";
 import {
   buildExportUrl,
   downloadExport,
@@ -39,6 +41,7 @@ function SamplingSpecies() {
   const [rows, setRows] = useState<SamplingSpeciesRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const { wrapped, toggle: toggleWrap, tableClass } = useWrapText();
   const { selected, toggle, setMany } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -287,12 +290,14 @@ function SamplingSpecies() {
             ? `Export ${selected.size} selected`
             : "Export CSV"}
         </button>
+
+        <WrapTextToggle wrapped={wrapped} onToggle={toggleWrap} />
       </div>
 
       {rows.length > 0 ? (
         <>
           <div className="table-wrap">
-            <table className="sampling-species-table">
+            <table className={`sampling-species-table${tableClass}`}>
               <thead>
                 <tr>
                   <th className="col-select">

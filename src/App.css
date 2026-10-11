@@ -1146,3 +1146,10 @@ tbody tr:hover {
   margin-top: 0.2rem;
   color: #b00020;
 }
+
+/* "Wrap long text": show whole values instead of clipping them. */
+.table-wrapped td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
