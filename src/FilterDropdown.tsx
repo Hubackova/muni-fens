@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isValueFilter, type FilterMeta } from "./api";
 
 type Props = {
@@ -19,16 +19,22 @@ const WIDTH = 240;
 // Rendered with position:fixed so it isn't clipped by the scrollable table.
 function FilterDropdown({ meta, anchor, values, onChange, onClose }: Props) {
   const [query, setQuery] = useState("");
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Reposition relative to the anchor; close on scroll/resize so it never
-  // drifts away from its column.
+  // Close on scroll/resize so the popover never drifts away from its column -
+  // except when the scrolling happens inside its own list of values.
   useEffect(() => {
-    const onScrollOrResize = () => onClose();
-    window.addEventListener("scroll", onScrollOrResize, true);
-    window.addEventListener("resize", onScrollOrResize);
+    const onScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && panelRef.current?.contains(target)) return;
+      onClose();
+    };
+    const onResize = () => onClose();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("scroll", onScrollOrResize, true);
-      window.removeEventListener("resize", onScrollOrResize);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onResize);
     };
   }, [onClose]);
 
@@ -43,6 +49,7 @@ function FilterDropdown({ meta, anchor, values, onChange, onClose }: Props) {
 
   return (
     <div
+      ref={panelRef}
       className="filter-dropdown"
       style={style}
       onClick={(e) => e.stopPropagation()}

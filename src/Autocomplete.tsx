@@ -36,16 +36,23 @@ function Autocomplete<T>({
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const close = () => setAnchor(null);
 
-  // Close instead of following the anchor around, the way FilterDropdown does.
+  // Close instead of following the anchor around - but not when the scrolling
+  // happens inside the result list, which has a scrollbar of its own.
   useEffect(() => {
     if (!anchor) return;
-    window.addEventListener("scroll", close, true);
+    const onScroll = (event: Event) => {
+      const target = event.target as Node | null;
+      if (target && listRef.current?.contains(target)) return;
+      close();
+    };
+    window.addEventListener("scroll", onScroll, true);
     window.addEventListener("resize", close);
     return () => {
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", close);
     };
   }, [anchor]);
@@ -119,6 +126,7 @@ function Autocomplete<T>({
       />
       {anchor && (
         <ul
+          ref={listRef}
           className="autocomplete-list"
           style={{
             position: "fixed",

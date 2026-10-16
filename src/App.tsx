@@ -26,11 +26,11 @@ const SHARED_TABS: { id: Tab; label: string }[] = [
 ];
 
 const ECO_TABS: { id: Tab; label: string }[] = [
+  { id: "add", label: "Add new" },
   { id: "localities-eco", label: "Localities" },
   { id: "samplings", label: "Samplings" },
   { id: "observations", label: "Observations" },
   { id: "sampling-species", label: "All data" },
-  { id: "add", label: "Add new" },
 ];
 
 function App() {
