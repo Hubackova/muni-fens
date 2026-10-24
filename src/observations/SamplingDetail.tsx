@@ -126,7 +126,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
       alive: row.alive === null ? "" : String(row.alive),
       empty: row.empty === null ? "" : String(row.empty),
       undefined: row.undefined === null ? "" : String(row.undefined),
-      lot: row.lot === null ? "" : String(row.lot),
+      voucher_no: row.voucher_no === null ? "" : String(row.voucher_no),
       vouchers: row.vouchers === null ? "" : String(row.vouchers),
       specification: row.specification ?? "",
       note: row.note ?? "",
@@ -298,7 +298,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
                   <th>Empty</th>
                   <th>Undefined</th>
                   <th>All</th>
-                  <th>Lot</th>
+                  <th>Voucher no.</th>
                   <th>Vouchers</th>
                   <th>Note</th>
                   <th className="col-actions"></th>
@@ -356,8 +356,8 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
                       </td>
                       <td>
                         {isEditing
-                          ? countInput(editDraft, setEditDraft, "lot")
-                          : (row.lot ?? "-")}
+                          ? countInput(editDraft, setEditDraft, "voucher_no")
+                          : (row.voucher_no ?? "-")}
                       </td>
                       <td>
                         {isEditing
@@ -455,7 +455,9 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
                     {totalIndividuals(draft)}
                   </output>
                 </label>
-                <label>Lot{countInput(draft, setDraft, "lot")}</label>
+                <label>
+                  Voucher no.{countInput(draft, setDraft, "voucher_no")}
+                </label>
                 <label>Vouchers{countInput(draft, setDraft, "vouchers")}</label>
                 <label className="grow">
                   Note{countInput(draft, setDraft, "note", "text")}

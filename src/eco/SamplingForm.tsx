@@ -35,6 +35,7 @@ const emptyForm = {
   distance: "",
   ph: "",
   conductivity: "",
+  lot: "",
   releve: "",
   event: "",
   note: "",
@@ -150,6 +151,7 @@ function SamplingForm({ lookups }: Props) {
             distance: optionalInt(form.distance),
             ph: optionalDecimal(form.ph),
             conductivity: optionalDecimal(form.conductivity),
+            lot: optionalInt(form.lot),
             releve: optionalInt(form.releve),
             event: form.event.trim() || null,
             sampling_note: form.note.trim() || null,
@@ -380,6 +382,14 @@ function SamplingForm({ lookups }: Props) {
             inputMode="decimal"
             value={form.conductivity}
             onChange={(e) => update({ conductivity: e.target.value })}
+          />
+        </label>
+        <label>
+          Lot no.
+          <input
+            type="number"
+            value={form.lot}
+            onChange={(e) => update({ lot: e.target.value })}
           />
         </label>
         <label>

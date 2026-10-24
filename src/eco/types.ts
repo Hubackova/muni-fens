@@ -33,6 +33,7 @@ export type SamplingCreate = {
   distance: number | null;
   ph: number | null;
   conductivity: number | null;
+  lot: number | null;
   releve: number | null;
   event: string | null;
   sampling_note: string | null;

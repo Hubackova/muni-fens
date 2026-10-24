@@ -77,7 +77,7 @@ function ImportDialog({ samplingId, onClose, onImported }: Props) {
         <p className="hint">
           UTF-8, with a header row. Required columns:{" "}
           <code>species,alive,empty,undefined</code>. Optional:{" "}
-          <code>specification,lot,vouchers,note</code>. Species names must match
+          <code>specification,voucher_no,vouchers,note</code>. Species names must match
           exactly and must be the currently valid name. Neither{" "}
           <code>sampling_id</code> nor <code>all</code> belongs in the file.
         </p>

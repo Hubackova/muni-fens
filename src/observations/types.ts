@@ -11,7 +11,7 @@ export type Observation = {
   undefined: number | null;
   // Computed by the backend as alive + empty + undefined.
   all_individuals: number;
-  lot: number | null;
+  voucher_no: number | null;
   vouchers: number | null;
   note: string | null;
 };
@@ -27,13 +27,13 @@ export const SPECIFICATION_LOOKUP = "mol_observation_specifications";
 
 // The header the import endpoint expects; the optional columns may be omitted.
 export const CSV_HEADER =
-  "species,specification,alive,empty,undefined,lot,vouchers,note";
+  "species,specification,alive,empty,undefined,voucher_no,vouchers,note";
 
 export type CountsDraft = {
   alive: string;
   empty: string;
   undefined: string;
-  lot: string;
+  voucher_no: string;
   vouchers: string;
   specification: string;
   note: string;
@@ -43,7 +43,7 @@ export const emptyCounts: CountsDraft = {
   alive: "",
   empty: "",
   undefined: "",
-  lot: "",
+  voucher_no: "",
   vouchers: "",
   specification: "",
   note: "",
@@ -88,13 +88,18 @@ export function validateCounts(draft: CountsDraft): CountsProblem | null {
     };
   }
 
-  const lotRaw = draft.lot.trim();
-  if (lotRaw) {
-    const lot = parseCount(draft.lot);
-    if (lot === null) {
-      return { field: "lot", message: `"${lotRaw}" is not a valid integer.` };
+  const voucherRaw = draft.voucher_no.trim();
+  if (voucherRaw) {
+    const voucherNo = parseCount(draft.voucher_no);
+    if (voucherNo === null) {
+      return {
+        field: "voucher_no",
+        message: `"${voucherRaw}" is not a valid integer.`,
+      };
     }
-    if (lot < 0) return { field: "lot", message: "Value cannot be negative." };
+    if (voucherNo < 0) {
+      return { field: "voucher_no", message: "Value cannot be negative." };
+    }
   }
 
   const vouchersRaw = draft.vouchers.trim();
@@ -133,7 +138,7 @@ export function countsPayload(draft: CountsDraft) {
     alive: parseCount(draft.alive),
     empty: parseCount(draft.empty),
     undefined: parseCount(draft.undefined),
-    lot: parseCount(draft.lot),
+    voucher_no: parseCount(draft.voucher_no),
     vouchers: parseCount(draft.vouchers),
     note: draft.note.trim() || null,
   };
@@ -153,7 +158,7 @@ export type ObservationRow = {
   undefined: number | null;
   // Computed by the backend.
   all: number;
-  lot: number | null;
+  voucher_no: number | null;
   vouchers: number | null;
   note: string | null;
   // The entry point the observation came in through; filtered as entry_point.
@@ -205,7 +210,7 @@ export const OBSERVATION_COLUMNS: ObservationColumn[] = [
   { key: "empty", label: "Empty", sortable: true, input: "integer" },
   { key: "undefined", label: "Undefined", sortable: true, input: "integer" },
   { key: "all", label: "All", sortable: true },
-  { key: "lot", label: "Lot", sortable: true, input: "integer" },
+  { key: "voucher_no", label: "Voucher no.", sortable: true, input: "integer" },
   { key: "vouchers", label: "Vouchers", sortable: true, input: "integer" },
   { key: "note", label: "Note", sortable: false, input: "text" },
   { key: "research_type", label: "Research type", sortable: true },

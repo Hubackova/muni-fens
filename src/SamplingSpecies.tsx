@@ -20,6 +20,7 @@ import {
 } from "./export";
 import FilterDropdown from "./FilterDropdown";
 import SamplingDetail from "./observations/SamplingDetail";
+import { formatSamplingDate } from "./samplings/types";
 import {
   SAMPLING_SPECIES_COLUMNS,
   SAMPLING_SPECIES_DEFAULT_SORT,
@@ -221,10 +222,7 @@ function SamplingSpecies() {
 
   const formatValue = (row: SamplingSpeciesRow, col: SamplingSpeciesColumn) => {
     if (col.key === "country") return row.name_en;
-    if (col.key === "sampling_date") {
-      // No date_precision in this view, so the stored date is printed as is.
-      return row.sampling_date ?? "-";
-    }
+    if (col.key === "sampling_date") return formatSamplingDate(row);
     const value = row[col.key];
     return value === null || value === "" ? "-" : String(value);
   };
@@ -255,7 +253,7 @@ function SamplingSpecies() {
     ? SAMPLING_SPECIES_COLUMNS.find((c) => c.key === openFilter)
     : undefined;
   const openMeta = openColumn
-    ? filterMetaByField.get(openColumn.key)
+    ? filterMetaByField.get(openColumn.metaField ?? openColumn.key)
     : undefined;
 
   if (openSampling !== null) {
@@ -313,7 +311,7 @@ function SamplingSpecies() {
                     />
                   </th>
                   {SAMPLING_SPECIES_COLUMNS.map((col) => {
-                    const meta = filterMetaByField.get(col.key);
+                    const meta = filterMetaByField.get(col.metaField ?? col.key);
                     const selectedCount = meta
                       ? filterParams(meta).filter((p) => filters[p]?.length)
                           .length

@@ -33,6 +33,7 @@ export type Sampling = {
   sampling_method: string;
   ph: number | null;
   conductivity: number | null;
+  lot: number | null;
   releve: number | null;
   data_type: string | null;
   event: string | null;
@@ -138,6 +139,13 @@ export const SAMPLING_COLUMNS: SamplingColumn[] = [
     label: "Conductivity",
     sortable: true,
     input: "decimal",
+    nullable: true,
+  },
+  {
+    key: "lot",
+    label: "Lot no.",
+    sortable: true,
+    input: "integer",
     nullable: true,
   },
   {
