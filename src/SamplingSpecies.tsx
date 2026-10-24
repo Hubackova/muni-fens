@@ -378,7 +378,7 @@ function SamplingSpecies() {
                     <td className="col-select">
                       <input
                         type="checkbox"
-                        aria-label={`Select observation #${row.observation_id}`}
+                        aria-label={`Select record #${row.observation_id}`}
                         checked={selected.has(row.observation_id)}
                         onChange={() => toggle(row.observation_id)}
                       />

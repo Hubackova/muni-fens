@@ -153,7 +153,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
       setEditSpecies(null);
       await load();
     } catch (err) {
-      setError(`Failed to save the observation. (${errorMessage(err)})`);
+      setError(`Failed to save the record. (${errorMessage(err)})`);
     } finally {
       setIsSaving(false);
     }
@@ -174,7 +174,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
       if (editingId === row.observation_id) setEditingId(null);
       await load();
     } catch (err) {
-      setError(`Failed to remove the observation. (${errorMessage(err)})`);
+      setError(`Failed to remove the record. (${errorMessage(err)})`);
     } finally {
       setIsSaving(false);
     }
@@ -491,7 +491,7 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
           samplingId={samplingId}
           onClose={() => setIsImportOpen(false)}
           onImported={async (inserted) => {
-            setNotice(`${inserted} observation(s) imported.`);
+            setNotice(`${inserted} record(s) imported.`);
             await load();
           }}
         />

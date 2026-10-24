@@ -66,7 +66,7 @@ function ImportDialog({ samplingId, onClose, onImported }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-head">
-          <h2>Import observations from CSV</h2>
+          <h2>Import records from CSV</h2>
           <button type="button" className="modal-close" onClick={onClose}>
             &times;
           </button>

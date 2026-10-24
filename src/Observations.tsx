@@ -132,7 +132,7 @@ function Observations() {
       setError(null);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
-      setError(`Failed to load observations. (${errorMessage(err)})`);
+      setError(`Failed to load records. (${errorMessage(err)})`);
     } finally {
       setIsLoading(false);
     }
@@ -356,7 +356,7 @@ function Observations() {
   // it, it only disappears from the ECO views.
   const handleDelete = async (row: ObservationRow) => {
     const confirmed = window.confirm(
-      `Remove observation #${row.observation_id} (${row.species_name}) from ECO?\n\n` +
+      `Remove record #${row.observation_id} (${row.species_name}) from ECO?\n\n` +
         "It stays in the database for the DNA part and only disappears from " +
         "the ECO views.",
     );
@@ -369,7 +369,7 @@ function Observations() {
       clear();
       await reloadAll();
     } catch (err) {
-      setError(`Failed to remove the observation. (${errorMessage(err)})`);
+      setError(`Failed to remove the record. (${errorMessage(err)})`);
     } finally {
       setIsSaving(false);
     }
@@ -439,13 +439,13 @@ function Observations() {
         <input
           type="search"
           className="search-input"
-          placeholder="Search observations..."
+          placeholder="Search records..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
 
         <button type="button" className="toolbar-toggle" onClick={toggleScope}>
-          {onlyEco ? "Include DNA observations" : "Show only ECO observations"}
+          {onlyEco ? "Include DNA records" : "Show only ECO records"}
         </button>
 
         <button type="button" className="toolbar-toggle" onClick={handleExport}>
@@ -549,7 +549,7 @@ function Observations() {
                       <td className="col-select">
                         <input
                           type="checkbox"
-                          aria-label={`Select observation #${row.observation_id}`}
+                          aria-label={`Select record #${row.observation_id}`}
                           checked={selected.has(row.observation_id)}
                           onChange={() => toggle(row.observation_id)}
                           onClick={(e) => e.stopPropagation()}
@@ -609,7 +609,7 @@ function Observations() {
               Previous
             </button>
             <span>
-              Page {page} of {totalPages} ({total} observations)
+              Page {page} of {totalPages} ({total} records)
             </span>
             {isLoading && <span>Loading...</span>}
             <button
@@ -623,7 +623,7 @@ function Observations() {
         </>
       ) : (
         !isInitialLoading &&
-        !error && <p className="empty">No observations found.</p>
+        !error && <p className="empty">No records found.</p>
       )}
 
       <div className="toolbar">

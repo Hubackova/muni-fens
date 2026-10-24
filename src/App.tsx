@@ -29,7 +29,7 @@ const ECO_TABS: { id: Tab; label: string }[] = [
   { id: "add", label: "Add new" },
   { id: "localities-eco", label: "Localities" },
   { id: "samplings", label: "Samplings" },
-  { id: "observations", label: "Observations" },
+  { id: "observations", label: "Records" },
   { id: "sampling-species", label: "All data" },
 ];
 
