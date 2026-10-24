@@ -774,6 +774,7 @@ tbody tr:hover {
 }
 
 .toolbar-field select,
+.toolbar-select,
 .num-input {
   padding: 0.45rem 0.6rem;
   border: 1px solid #d0d7de;

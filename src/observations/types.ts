@@ -163,6 +163,7 @@ export type ObservationRow = {
   note: string | null;
   // The entry point the observation came in through; filtered as entry_point.
   research_type: string;
+  deleted: number;
 };
 
 export type ObservationListResponse = {
@@ -214,6 +215,7 @@ export const OBSERVATION_COLUMNS: ObservationColumn[] = [
   { key: "vouchers", label: "Vouchers", sortable: true, input: "integer" },
   { key: "note", label: "Note", sortable: false, input: "text" },
   { key: "research_type", label: "Research type", sortable: true },
+  { key: "deleted", label: "Deleted", sortable: true },
 ];
 
 export const OBSERVATION_EDITABLE = OBSERVATION_COLUMNS.filter((c) => c.input);

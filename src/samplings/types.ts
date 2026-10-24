@@ -39,6 +39,7 @@ export type Sampling = {
   event: string | null;
   sampling_note: string | null;
   research_type: string;
+  deleted: number;
 };
 
 export type SamplingListResponse = {
@@ -178,6 +179,7 @@ export const SAMPLING_COLUMNS: SamplingColumn[] = [
     nullable: true,
   },
   { key: "research_type", label: "Research type", sortable: true },
+  { key: "deleted", label: "Deleted", sortable: true },
 ];
 
 export const SAMPLING_EDITABLE = SAMPLING_COLUMNS.filter((c) => c.input);

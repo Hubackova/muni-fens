@@ -15,7 +15,9 @@ import {
 import ConfirmChangesDialog, {
   type FieldChange,
 } from "./ConfirmChangesDialog";
+import DeletedModeSelect from "./DeletedModeSelect";
 import ErrorBanner from "./ErrorBanner";
+import { useDeletedMode } from "./useDeletedMode";
 import WrapTextToggle from "./WrapTextToggle";
 import { useWrapText } from "./useWrapText";
 import {
@@ -52,6 +54,12 @@ function Samplings() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const { wrapped, toggle: toggleWrap, tableClass } = useWrapText();
+  const {
+    mode: deletedMode,
+    setMode: setDeletedMode,
+    apply: applyDeleted,
+    showDeletedColumn,
+  } = useDeletedMode();
   const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +98,12 @@ function Samplings() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const isInitialLoading = isLoading && rows.length === 0;
 
+  // The flag is only worth a column when deleted rows can show up.
+  const visibleColumns = useMemo(
+    () => SAMPLING_COLUMNS.filter((col) => col.key !== "deleted" || showDeletedColumn),
+    [showDeletedColumn],
+  );
+
   const filterMetaByField = useMemo(() => {
     const map = new Map<string, FilterMeta>();
     for (const meta of filterMeta) map.set(meta.field, meta);
@@ -114,6 +128,7 @@ function Samplings() {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
+    applyDeleted(params);
     return params;
   };
 
@@ -212,7 +227,7 @@ function Samplings() {
     })();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, sortBy, sortOrder, search, filtersKey]);
+  }, [offset, sortBy, sortOrder, search, filtersKey, deletedMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -479,6 +494,18 @@ function Samplings() {
             : "Export CSV"}
         </button>
 
+        <DeletedModeSelect
+          value={deletedMode}
+          onChange={(mode) => {
+            setDeletedMode(mode);
+            if (mode !== "all" && sortBy === "deleted") {
+              setSortBy(SAMPLING_DEFAULT_SORT);
+              setSortOrder("asc");
+            }
+            setPage(1);
+          }}
+        />
+
         <WrapTextToggle wrapped={wrapped} onToggle={toggleWrap} />
       </div>
 
@@ -500,7 +527,7 @@ function Samplings() {
                       onClick={(e) => e.stopPropagation()}
                     />
                   </th>
-                  {SAMPLING_COLUMNS.map((col) => {
+                  {visibleColumns.map((col) => {
                     const meta = filterMetaByField.get(col.key);
                     const selectedCount = meta
                       ? filterParams(meta).filter((p) => filters[p]?.length)
@@ -607,7 +634,7 @@ function Samplings() {
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
-                      {SAMPLING_COLUMNS.map((col) => (
+                      {visibleColumns.map((col) => (
                         <td key={col.key} className={`col-${col.key}`}>
                           {renderCell(row, col, isEditing)}
                         </td>

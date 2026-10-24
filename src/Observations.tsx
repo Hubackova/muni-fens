@@ -12,7 +12,9 @@ import {
   type FiltersResponse,
   type LookupsResponse,
 } from "./api";
+import DeletedModeSelect from "./DeletedModeSelect";
 import ErrorBanner from "./ErrorBanner";
+import { useDeletedMode } from "./useDeletedMode";
 import WrapTextToggle from "./WrapTextToggle";
 import { useWrapText } from "./useWrapText";
 import {
@@ -49,6 +51,12 @@ function Observations() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const { wrapped, toggle: toggleWrap, tableClass } = useWrapText();
+  const {
+    mode: deletedMode,
+    setMode: setDeletedMode,
+    apply: applyDeleted,
+    showDeletedColumn,
+  } = useDeletedMode();
   const { selected, toggle, setMany, clear } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +93,12 @@ function Observations() {
   const isInitialLoading = isLoading && rows.length === 0;
   const specificationOptions = lookups[SPECIFICATION_LOOKUP] ?? [];
 
+  // The flag is only worth a column when deleted rows can show up.
+  const visibleColumns = useMemo(
+    () => OBSERVATION_COLUMNS.filter((col) => col.key !== "deleted" || showDeletedColumn),
+    [showDeletedColumn],
+  );
+
   const filterMetaByField = useMemo(() => {
     const map = new Map<string, FilterMeta>();
     for (const meta of filterMeta) map.set(meta.field, meta);
@@ -110,6 +124,7 @@ function Observations() {
       for (const value of values) params.append(param, value);
     }
     if (onlyEco) params.set(entryPointParam, "ECO");
+    applyDeleted(params);
     return params;
   };
 
@@ -210,7 +225,7 @@ function Observations() {
     })();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, sortBy, sortOrder, search, filtersKey, onlyEco]);
+  }, [offset, sortBy, sortOrder, search, filtersKey, onlyEco, deletedMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -454,6 +469,18 @@ function Observations() {
             : "Export CSV"}
         </button>
 
+        <DeletedModeSelect
+          value={deletedMode}
+          onChange={(mode) => {
+            setDeletedMode(mode);
+            if (mode !== "all" && sortBy === "deleted") {
+              setSortBy(OBSERVATION_DEFAULT_SORT);
+              setSortOrder("asc");
+            }
+            setPage(1);
+          }}
+        />
+
         <WrapTextToggle wrapped={wrapped} onToggle={toggleWrap} />
       </div>
 
@@ -475,7 +502,7 @@ function Observations() {
                       onClick={(e) => e.stopPropagation()}
                     />
                   </th>
-                  {OBSERVATION_COLUMNS.map((col) => {
+                  {visibleColumns.map((col) => {
                     const meta = filterMetaByField.get(col.key);
                     const selectedCount = meta
                       ? filterParams(meta).filter((p) => filters[p]?.length)
@@ -555,7 +582,7 @@ function Observations() {
                           onClick={(e) => e.stopPropagation()}
                         />
                       </td>
-                      {OBSERVATION_COLUMNS.map((col) => (
+                      {visibleColumns.map((col) => (
                         <td key={col.key} className={`col-${col.key}`}>
                           {renderCell(row, col, isEditing)}
                         </td>

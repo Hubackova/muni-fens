@@ -117,6 +117,7 @@ export const SAMPLING_SPECIES_COLUMNS: SamplingSpeciesColumn[] = [
   { key: "event", label: "PLA/Event", sortable: true },
   { key: "sampling_note", label: "Sampling note", sortable: true },
   { key: "research_type", label: "Research type", sortable: true },
+  { key: "deleted", label: "Deleted", sortable: true },
 ];
 
 export const SAMPLING_SPECIES_DEFAULT_SORT = "sampling_id";

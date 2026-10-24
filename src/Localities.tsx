@@ -30,7 +30,9 @@ import type { SortOrder } from "./species/types";
 import ConfirmChangesDialog, {
   type FieldChange,
 } from "./ConfirmChangesDialog";
+import DeletedModeSelect from "./DeletedModeSelect";
 import ErrorBanner from "./ErrorBanner";
+import { useDeletedMode } from "./useDeletedMode";
 import WrapTextToggle from "./WrapTextToggle";
 import { useWrapText } from "./useWrapText";
 import {
@@ -42,9 +44,6 @@ import {
 const API_BASE = `${API_ROOT}/${LOCALITY_ENTITY}`;
 const PAGE_SIZE = 50;
 const INPUT_DEBOUNCE_MS = 300;
-
-// "all" keeps the API default (soft-deleted rows are included in the list).
-type DeletedMode = "all" | "active" | "deleted";
 
 // Edited values are kept as strings (that is what the inputs hold) and are
 // converted back to the API types on save.
@@ -82,9 +81,14 @@ function Localities({ eco = false }: Props) {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const [filterAnchor, setFilterAnchor] = useState<DOMRect | null>(null);
 
-  // Soft-deleted rows stay in a toolbar switch: its column is hidden by
+  // Soft-deleted rows stay in a toolbar switch: the column is hidden by
   // default, so its header filter would be unreachable.
-  const [deletedMode, setDeletedMode] = useState<DeletedMode>("active");
+  const {
+    mode: deletedMode,
+    setMode: setDeletedMode,
+    apply: applyDeleted,
+    showDeletedColumn,
+  } = useDeletedMode();
   // ECO tab only: false widens the table to DNA localities as well.
   const [onlyEco, setOnlyEco] = useState(true);
   // The param that carries the entry point, taken from the filter metadata -
@@ -123,9 +127,9 @@ function Localities({ eco = false }: Props) {
   const visibleColumns = useMemo(
     () =>
       LOCALITY_COLUMNS.filter(
-        (col) => col.key !== "deleted" || deletedMode === "all",
+        (col) => col.key !== "deleted" || showDeletedColumn,
       ),
-    [deletedMode],
+    [showDeletedColumn],
   );
 
   const filterMetaByField = useMemo(() => {
@@ -154,9 +158,7 @@ function Localities({ eco = false }: Props) {
     for (const [param, values] of Object.entries(filters)) {
       for (const value of values) params.append(param, value);
     }
-    if (deletedMode !== "all") {
-      params.set("filter_deleted", deletedMode === "deleted" ? "1" : "0");
-    }
+    applyDeleted(params);
     if (eco && onlyEco) params.set(entryPointParam, "ECO");
     return params;
   };
@@ -526,25 +528,19 @@ function Localities({ eco = false }: Props) {
           onChange={(e) => setSearchInput(e.target.value)}
         />
 
-        <label className="toolbar-field">
-          Deleted
-          <select
-            value={deletedMode}
-            onChange={(e) => {
-              const mode = e.target.value as DeletedMode;
-              setDeletedMode(mode);
-              if (mode !== "all" && sortBy === "deleted") {
-                setSortBy(LOCALITY_DEFAULT_SORT);
-                setSortOrder("asc");
-              }
-              setPage(1);
-            }}
-          >
-            <option value="all">All</option>
-            <option value="active">Active only</option>
-            <option value="deleted">Deleted only</option>
-          </select>
-        </label>
+        <DeletedModeSelect
+          value={deletedMode}
+          onChange={(mode) => {
+            setDeletedMode(mode);
+            // The column disappears outside "all", so the sort must not stay
+            // on something the user can no longer see.
+            if (mode !== "all" && sortBy === "deleted") {
+              setSortBy(LOCALITY_DEFAULT_SORT);
+              setSortOrder("asc");
+            }
+            setPage(1);
+          }}
+        />
 
         {eco && (
           <button
