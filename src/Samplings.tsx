@@ -12,7 +12,6 @@ import {
   type FiltersResponse,
   type LookupsResponse,
 } from "./api";
-import Autocomplete from "./Autocomplete";
 import ConfirmChangesDialog, {
   type FieldChange,
 } from "./ConfirmChangesDialog";
@@ -25,7 +24,6 @@ import {
   useRowSelection,
 } from "./export";
 import FilterDropdown from "./FilterDropdown";
-import type { LocalitySearchResult } from "./localities/types";
 import CleanupDialog from "./species/CleanupDialog";
 import SamplingDetail from "./observations/SamplingDetail";
 import {
@@ -78,10 +76,6 @@ function Samplings() {
   // Inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<EditValues>({});
-  // Set only when the user moves the sampling to another locality.
-  const [editLocality, setEditLocality] = useState<LocalitySearchResult | null>(
-    null,
-  );
   const [isSaving, setIsSaving] = useState(false);
   // Holds the edit between the confirmation dialog and the request.
   const [pendingSave, setPendingSave] = useState<{
@@ -258,18 +252,13 @@ function Samplings() {
     setEditingId(row.sampling_id);
     const values: EditValues = {};
     for (const col of SAMPLING_EDITABLE) {
-      if (col.input === "locality") continue;
       const value = row[col.key];
       values[col.key] = value === null ? "" : String(value);
     }
     setEditValues(values);
-    setEditLocality(null);
   };
 
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditLocality(null);
-  };
+  const cancelEditing = () => setEditingId(null);
 
   type PatchProblem = { field: string; message: string };
 
@@ -278,7 +267,6 @@ function Samplings() {
     const patch: Record<string, unknown> = {};
 
     for (const col of SAMPLING_EDITABLE) {
-      if (col.input === "locality") continue;
 
       const original = row[col.key];
       const raw = (editValues[col.key] ?? "").trim();
@@ -309,21 +297,11 @@ function Samplings() {
       if (raw !== original) patch[col.key] = raw;
     }
 
-    if (editLocality && editLocality.id !== row.locality_id) {
-      patch.locality_id = editLocality.id;
-    }
     return patch;
   };
 
   const describe = (row: Sampling, patch: Record<string, unknown>) =>
     Object.entries(patch).map(([key, value]): FieldChange => {
-      if (key === "locality_id") {
-        return {
-          label: "Locality",
-          from: row.site_name,
-          to: editLocality?.name ?? String(value),
-        };
-      }
       const column = SAMPLING_COLUMNS.find((col) => col.key === key);
       const before = row[key as keyof Sampling];
       return {
@@ -425,23 +403,6 @@ function Samplings() {
     }
 
     if (!isEditing || !col.input) return formatValue(row, col);
-
-    if (col.input === "locality") {
-      return (
-        <Autocomplete<LocalitySearchResult>
-          url={(q) =>
-            `${API_ROOT}/localities/search?q=${encodeURIComponent(q)}`
-          }
-          getKey={(l) => l.id}
-          getLabel={(l) => l.name}
-          getHint={(l) => `#${l.id}`}
-          selected={editLocality}
-          onSelect={setEditLocality}
-          placeholder={row.site_name}
-          invalid={errorField === "locality_id"}
-        />
-      );
-    }
 
     if (col.input === "lookup") {
       const options = col.lookup ? (lookups[col.lookup] ?? []) : [];

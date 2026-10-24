@@ -48,7 +48,7 @@ export type SamplingListResponse = {
   offset: number;
 };
 
-type EditInput = "text" | "decimal" | "integer" | "lookup" | "locality";
+type EditInput = "text" | "decimal" | "integer" | "lookup";
 
 export type SamplingColumn = {
   key: keyof Sampling;
@@ -65,8 +65,8 @@ export const SAMPLING_COLUMNS: SamplingColumn[] = [
   { key: "sampling_id", label: "Sampling ID", sortable: true },
   { key: "site_id", label: "Site ID", sortable: true },
   { key: "field_code", label: "Field code", sortable: true },
-  // Editing this cell moves the sampling to another locality.
-  { key: "site_name", label: "Site name", sortable: true, input: "locality" },
+  // Read-only: the locality is edited in the Localities tab.
+  { key: "site_name", label: "Site name", sortable: true },
   { key: "country", label: "Country", sortable: true },
   { key: "state_region", label: "State/Province/Region", sortable: true },
   { key: "settlement", label: "Settlement", sortable: true },
