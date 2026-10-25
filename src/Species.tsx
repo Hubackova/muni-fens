@@ -142,13 +142,17 @@ function Species() {
   const pageSelected =
     pageIds.length > 0 && pageIds.every((id) => selected.has(id));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const ids = rows
       .map((row) => row.species_id)
       .filter((id) => selected.has(id));
-    downloadExport(
-      buildExportUrl("/species/export", buildQuery(), "species_ids", ids),
-    );
+    try {
+      await downloadExport(
+        buildExportUrl("/species/export", buildQuery(), "species_ids", ids),
+      );
+    } catch (err) {
+      setError(`Failed to export the species. (${errorMessage(err)})`);
+    }
   };
 
   // Load metadata (filters, cleanup fields, lookups). Re-run after mutations so

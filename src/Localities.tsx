@@ -193,11 +193,15 @@ function Localities({ eco = false }: Props) {
   const pageSelected =
     pageIds.length > 0 && pageIds.every((id) => selected.has(id));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const ids = pageIds.filter((id) => selected.has(id));
-    downloadExport(
-      buildExportUrl("/localities/export", buildQuery(), "locality_ids", ids),
-    );
+    try {
+      await downloadExport(
+        buildExportUrl("/localities/export", buildQuery(), "locality_ids", ids),
+      );
+    } catch (err) {
+      setError(`Failed to export the localities. (${errorMessage(err)})`);
+    }
   };
 
   const loadMeta = async (signal?: AbortSignal) => {

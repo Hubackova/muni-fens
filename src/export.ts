@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_ROOT } from "./api";
+import { API_ROOT, readApiErrorDetail } from "./api";
 
 // The export endpoints mirror their list endpoint's search, filters and sort,
 // never take paging, and let an explicit row selection override everything
@@ -24,15 +24,45 @@ export function buildExportUrl(
   return `${API_ROOT}${path}${query ? `?${query}` : ""}`;
 }
 
-// The response carries Content-Disposition, so letting the browser follow a
-// link is enough - no blob juggling and the server's filename is kept.
-export function downloadExport(url: string) {
+// Pull the server's own name out of Content-Disposition, preferring the
+// encoded form when both are present.
+function exportFilename(disposition: string | null): string {
+  if (disposition) {
+    const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+    if (encoded) {
+      try {
+        return decodeURIComponent(encoded[1]);
+      } catch {
+        // malformed encoding - fall through to the plain form
+      }
+    }
+
+    const plain = /filename="?([^";]+)"?/i.exec(disposition);
+    if (plain) return plain[1];
+  }
+
+  return "export.csv";
+}
+
+// Fetched rather than opened as a link so a rejected export (a stale id in the
+// selection, say) reaches the page's error banner instead of silently landing
+// in the downloads folder as a file full of JSON.
+export async function downloadExport(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw await readApiErrorDetail(response);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = url;
+  link.href = objectUrl;
+  link.download = exportFilename(response.headers.get("Content-Disposition"));
   link.rel = "noopener";
   document.body.appendChild(link);
   link.click();
   link.remove();
+  URL.revokeObjectURL(objectUrl);
 }
 
 // Row ticks shared by every exportable table. Selections survive paging

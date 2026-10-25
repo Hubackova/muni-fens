@@ -161,11 +161,20 @@ function Samplings() {
   const pageSelected =
     pageIds.length > 0 && pageIds.every((id) => selected.has(id));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const ids = pageIds.filter((id) => selected.has(id));
-    downloadExport(
-      buildExportUrl("/eco/samplings/export", buildQuery(), "sampling_ids", ids),
-    );
+    try {
+      await downloadExport(
+        buildExportUrl(
+          "/eco/samplings/export",
+          buildQuery(),
+          "sampling_ids",
+          ids,
+        ),
+      );
+    } catch (err) {
+      setError(`Failed to export the samplings. (${errorMessage(err)})`);
+    }
   };
 
   const loadMeta = async (signal?: AbortSignal) => {

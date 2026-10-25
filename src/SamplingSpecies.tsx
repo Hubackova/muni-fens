@@ -22,6 +22,7 @@ import {
 } from "./export";
 import FilterDropdown from "./FilterDropdown";
 import SamplingDetail from "./observations/SamplingDetail";
+import TaxonomicChangePanel from "./taxonomy/TaxonomicChangePanel";
 import { formatSamplingDate } from "./samplings/types";
 import {
   SAMPLING_SPECIES_COLUMNS,
@@ -51,7 +52,7 @@ function SamplingSpecies() {
     apply: applyDeleted,
     showDeletedColumn,
   } = useDeletedMode();
-  const { selected, toggle, setMany } = useRowSelection();
+  const { selected, toggle, setMany, clear: clearSelection } = useRowSelection();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +70,10 @@ function SamplingSpecies() {
   const [filterAnchor, setFilterAnchor] = useState<DOMRect | null>(null);
 
   const [openSampling, setOpenSampling] = useState<number | null>(null);
+  const [isTaxonomyOpen, setIsTaxonomyOpen] = useState(false);
+  // Set by the taxonomic panel to narrow the table to its source species.
+  const [speciesFilter, setSpeciesFilter] = useState<number[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const offset = (page - 1) * PAGE_SIZE;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -92,6 +97,7 @@ function SamplingSpecies() {
   };
 
   const filtersKey = JSON.stringify(filters);
+  const speciesFilterKey = JSON.stringify(speciesFilter);
 
   // Everything but the paging, so the export can reuse it verbatim.
   const buildQuery = () => {
@@ -105,6 +111,9 @@ function SamplingSpecies() {
       for (const value of values) params.append(param, value);
     }
     applyDeleted(params);
+    for (const id of speciesFilter) {
+      params.append("filter_species_id", String(id));
+    }
     return params;
   };
 
@@ -137,16 +146,20 @@ function SamplingSpecies() {
   const pageSelected =
     pageIds.length > 0 && pageIds.every((id) => selected.has(id));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const ids = pageIds.filter((id) => selected.has(id));
-    downloadExport(
-      buildExportUrl(
-        "/eco/sampling-species/export",
-        buildQuery(),
-        "observation_ids",
-        ids,
-      ),
-    );
+    try {
+      await downloadExport(
+        buildExportUrl(
+          "/eco/sampling-species/export",
+          buildQuery(),
+          "observation_ids",
+          ids,
+        ),
+      );
+    } catch (err) {
+      setError(`Failed to export the data. (${errorMessage(err)})`);
+    }
   };
 
   const loadMeta = async (signal?: AbortSignal) => {
@@ -199,7 +212,15 @@ function SamplingSpecies() {
     })();
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offset, sortBy, sortOrder, search, filtersKey, deletedMode]);
+  }, [
+    offset,
+    sortBy,
+    sortOrder,
+    search,
+    filtersKey,
+    deletedMode,
+    speciesFilterKey,
+  ]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -208,6 +229,18 @@ function SamplingSpecies() {
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [searchInput]);
+
+  // The panel needs every row matching the current filters, not just the
+  // page on screen; the export endpoints do the same with no paging.
+  const fetchMatching = async () => {
+    const params = buildQuery();
+    params.set("limit", "1000");
+    params.set("offset", "0");
+    const data = await fetchJson<SamplingSpeciesListResponse>(
+      `${API_BASE}?${params.toString()}`,
+    );
+    return data.data;
+  };
 
   const reloadAll = async () => {
     await Promise.all([loadRows(), loadMeta()]);
@@ -288,6 +321,7 @@ function SamplingSpecies() {
     <section className="page" onClick={closeFilter}>
       {isInitialLoading && <p>Loading...</p>}
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {notice && <p className="notice">{notice}</p>}
 
       <div className="toolbar">
         <input
@@ -317,7 +351,36 @@ function SamplingSpecies() {
         />
 
         <WrapTextToggle wrapped={wrapped} onToggle={toggleWrap} />
+
+        <button
+          type="button"
+          className="toolbar-toggle"
+          onClick={() => setIsTaxonomyOpen((open) => !open)}
+        >
+          Taxonomic changes
+        </button>
       </div>
+
+      {isTaxonomyOpen && (
+        <TaxonomicChangePanel
+          selectedIds={Array.from(selected)}
+          fetchMatching={fetchMatching}
+          onSourceChange={(ids) => {
+            setSpeciesFilter(ids);
+            setPage(1);
+          }}
+          onSelectAll={(ids) => setMany(ids, true)}
+          onClose={() => {
+            setIsTaxonomyOpen(false);
+            setSpeciesFilter([]);
+          }}
+          onSaved={async (message) => {
+            setNotice(message);
+            clearSelection();
+            await reloadAll();
+          }}
+        />
+      )}
 
       {rows.length > 0 ? (
         <>

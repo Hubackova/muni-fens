@@ -157,11 +157,20 @@ function Observations() {
   const pageSelected =
     pageIds.length > 0 && pageIds.every((id) => selected.has(id));
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const ids = pageIds.filter((id) => selected.has(id));
-    downloadExport(
-      buildExportUrl("/eco/observations/export", buildQuery(), "observation_ids", ids),
-    );
+    try {
+      await downloadExport(
+        buildExportUrl(
+          "/eco/observations/export",
+          buildQuery(),
+          "observation_ids",
+          ids,
+        ),
+      );
+    } catch (err) {
+      setError(`Failed to export the records. (${errorMessage(err)})`);
+    }
   };
 
   const loadMeta = async (signal?: AbortSignal) => {
