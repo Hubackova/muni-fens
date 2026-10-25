@@ -163,7 +163,9 @@ function SynonymForm({ lookups, onCreated }: Props) {
           />
           <small className="hint">
             Pick an existing species to create a synonym; leave empty to add a
-            standalone species.
+            standalone species. A synonym renames the whole taxon - use it only
+            for global nomenclatural or taxonomic name changes, not for
+            reassigning some populations.
           </small>
         </label>
       </div>

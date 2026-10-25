@@ -17,7 +17,7 @@ export type SpeciesListResponse = {
   offset: number;
 };
 
-// One entry of a species' synonym history (GET /species/{id}/history).
+// GET /species/{id}/history returns two kinds of history side by side.
 export type SpeciesHistory = {
   unique_id: number;
   species: string;
@@ -25,6 +25,29 @@ export type SpeciesHistory = {
   author_year: string | null;
   created_on: string;
   deleted: number;
+};
+
+// One taxonomic change (split / merge / reassignment) this species took part
+// in, either as a source or as a target.
+export type SpeciesTaxonomicChange = {
+  change_id: number | null;
+  type: string | null;
+  role: string | null;
+  date: string | null;
+  created_on: string | null;
+  note: string | null;
+  source_species: string[] | null;
+  target_species: string[] | null;
+  affected_observations: number | null;
+  // Localities touched, grouped by the species they were taken from.
+  affected_localities_by_species: Record<string, string[]> | null;
+  // Set instead of the data when there is nothing to report.
+  message: string | null;
+};
+
+export type SpeciesFullHistory = {
+  name_history: SpeciesHistory[];
+  taxonomic_history: SpeciesTaxonomicChange[];
 };
 
 // GET /cleanup/{entity}

@@ -419,6 +419,12 @@ function SamplingDetail({ samplingId, lookups, onBack }: Props) {
             </table>
           </div>
           <br />
+          <p className="hint">
+            Changing the species of a row here is an immediate identification
+            correction - it is not written into species history. Taxonomic
+            splits, merges and reassignments belong to the All data tab.
+          </p>
+
           <section className="form-section">
             <h2>Add species to this sampling</h2>
             <form className="modal-form" onSubmit={handleAdd}>

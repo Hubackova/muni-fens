@@ -146,6 +146,10 @@ function Autocomplete<T>({
               <button
                 type="button"
                 onClick={() => {
+                  // The typed text has done its job. Callers that keep
+                  // rendering the input after a pick - a field collecting
+                  // several values - get an empty one, ready for the next.
+                  setQuery("");
                   onSelect(item);
                   close();
                 }}

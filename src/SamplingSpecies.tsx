@@ -146,6 +146,15 @@ function SamplingSpecies() {
   const pageSelected =
     pageIds.length > 0 && pageIds.every((id) => selected.has(id));
 
+  // Closing the panel drops everything it set up: the species narrowing and
+  // the row ticks that were only there to feed it.
+  const closeTaxonomy = () => {
+    setIsTaxonomyOpen(false);
+    setSpeciesFilter([]);
+    clearSelection();
+    setPage(1);
+  };
+
   const handleExport = async () => {
     const ids = pageIds.filter((id) => selected.has(id));
     try {
@@ -355,7 +364,9 @@ function SamplingSpecies() {
         <button
           type="button"
           className="toolbar-toggle"
-          onClick={() => setIsTaxonomyOpen((open) => !open)}
+          onClick={() =>
+            isTaxonomyOpen ? closeTaxonomy() : setIsTaxonomyOpen(true)
+          }
         >
           Taxonomic changes
         </button>
@@ -370,10 +381,8 @@ function SamplingSpecies() {
             setPage(1);
           }}
           onSelectAll={(ids) => setMany(ids, true)}
-          onClose={() => {
-            setIsTaxonomyOpen(false);
-            setSpeciesFilter([]);
-          }}
+          onClearSelection={clearSelection}
+          onClose={closeTaxonomy}
           onSaved={async (message) => {
             setNotice(message);
             clearSelection();
